@@ -1,11 +1,14 @@
 const { bundle } = require('@remotion/bundler');
 const { renderMedia, selectComposition } = require('@remotion/renderer');
 const express = require('express');
-app.use('/outputs', express.static(path.resolve('./')));
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
+
+// ESSA LINHA É O SEGREDO: Cria uma pasta pública para baixar os vídeos
+app.use('/outputs', express.static(path.resolve('./')));
 
 app.post('/render', async (req, res) => {
     const { videoUrl, title } = req.body;
@@ -13,32 +16,31 @@ app.post('/render', async (req, res) => {
 
     try {
         console.log('Iniciando renderização...');
-        // Gera o pacote do vídeo
         const bundleLocation = await bundle(path.resolve('./src/index.ts'));
 
-        // Seleciona a composição (Ajustado para serveUrl)
         const composition = await selectComposition({
             serveUrl: bundleLocation,
             id: compositionId,
             inputProps: { videoUrl, title },
         });
 
-        const outputLocation = `out-${Date.now()}.mp4`;
+        const fileName = `video-${Date.now()}.mp4`;
+        const outputLocation = path.resolve(fileName);
 
-        // Renderiza o MP4
         await renderMedia({
             composition,
             serveUrl: bundleLocation,
             codec: 'h264',
-            outputLocation: path.resolve(outputLocation),
+            outputLocation: outputLocation,
             inputProps: { videoUrl, title },
         });
 
-        console.log('Render concluído:', outputLocation);
+        console.log('Render concluído:', fileName);
+        
+        // Retorna a URL que o n8n vai usar para baixar o arquivo
         res.send({ 
             message: 'Renderizado!', 
-            file: outputLocation,
-            url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputLocation}` 
+            url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${fileName}` 
         });
 
     } catch (error) {
@@ -47,5 +49,7 @@ app.post('/render', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Servidor Remotion pronto na porta ${PORT}`));
+const PORT = 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor Remotion pronto na porta ${PORT}`);
+});
