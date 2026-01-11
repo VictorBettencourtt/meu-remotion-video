@@ -1,6 +1,7 @@
 const { bundle } = require('@remotion/bundler');
 const { renderMedia, selectComposition } = require('@remotion/renderer');
 const express = require('express');
+app.use('/outputs', express.static(path.resolve('./')));
 const path = require('path');
 
 const app = express();
@@ -37,7 +38,7 @@ app.post('/render', async (req, res) => {
         res.send({ 
             message: 'Renderizado!', 
             file: outputLocation,
-            path: path.resolve(outputLocation) 
+            url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputLocation}` 
         });
 
     } catch (error) {
