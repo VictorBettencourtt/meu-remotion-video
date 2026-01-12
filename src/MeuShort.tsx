@@ -1,11 +1,12 @@
-import { AbsoluteFill, Video } from 'remotion';
+import { AbsoluteFill, Video, Audio, useVideoConfig } from 'remotion';
 
 interface MyProps {
 	videoUrl: string;
 	title: string;
+	backgroundMusicUrl: string; // Nova prop pro áudio do Insta
 }
 
-export const MyShort: React.FC<MyProps> = ({ videoUrl, title }) => {
+export const MyShort: React.FC<MyProps> = ({ videoUrl, title, backgroundMusicUrl }) => {
 	return (
 		<AbsoluteFill style={{ backgroundColor: 'black' }}>
 			{/* CAMADA 1: FUNDO BORRADO */}
@@ -35,7 +36,16 @@ export const MyShort: React.FC<MyProps> = ({ videoUrl, title }) => {
 				/>
 			</AbsoluteFill>
 
-			{/* CAMADA 3: TÍTULO */}
+			{/* CAMADA 3: ÁUDIO EM TENDÊNCIA (BACKGROUND MUSIC) */}
+			{backgroundMusicUrl && (
+				<Audio 
+					src={backgroundMusicUrl} 
+					volume={0.3} // Volume baixo para ser música de fundo
+					placeholder={null}
+				/>
+			)}
+
+			{/* CAMADA 4: TÍTULO */}
 			<div style={{
 				position: 'absolute',
 				top: 150,
