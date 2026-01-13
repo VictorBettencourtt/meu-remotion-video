@@ -1,47 +1,47 @@
-import { AbsoluteFill, Video, Audio, useVideoConfig } from 'remotion';
+import { AbsoluteFill, OffthreadVideo, Audio } from 'remotion';
 
 interface MyProps {
 	videoUrl: string;
 	title: string;
-	backgroundMusicUrl: string; // Nova prop pro áudio do Insta
+	backgroundMusicUrl: string;
 }
 
 export const MyShort: React.FC<MyProps> = ({ videoUrl, title, backgroundMusicUrl }) => {
 	return (
 		<AbsoluteFill style={{ backgroundColor: 'black' }}>
-			{/* CAMADA 1: FUNDO BORRADO */}
+			{/* CAMADA 1: FUNDO BORRADO - Agora usando OffthreadVideo */}
 			<AbsoluteFill>
-				<Video
+				<OffthreadVideo
 					src={videoUrl}
 					muted
 					style={{
 						width: '100%',
 						height: '100%',
 						objectFit: 'cover',
-						filter: 'blur(20px) brightness(0.4)',
+						filter: 'blur(25px) brightness(0.4)',
 						transform: 'scale(1.5)',
 					}}
 				/>
 			</AbsoluteFill>
 
-			{/* CAMADA 2: VÍDEO NO MEIO */}
+			{/* CAMADA 2: VÍDEO NO MEIO - Agora usando OffthreadVideo */}
 			<AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
-				<Video
+				<OffthreadVideo
 					src={videoUrl}
 					style={{
 						width: '90%',
 						borderRadius: '30px',
-						border: '5px solid white'
+						border: '5px solid white',
+						boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
 					}}
 				/>
 			</AbsoluteFill>
 
-			{/* CAMADA 3: ÁUDIO EM TENDÊNCIA (BACKGROUND MUSIC) */}
+			{/* CAMADA 3: ÁUDIO DO INSTAGRAM */}
 			{backgroundMusicUrl && (
 				<Audio 
 					src={backgroundMusicUrl} 
-					volume={0.3} // Volume baixo para ser música de fundo
-					placeholder={null}
+					volume={0.3}
 				/>
 			)}
 
@@ -55,7 +55,8 @@ export const MyShort: React.FC<MyProps> = ({ videoUrl, title, backgroundMusicUrl
 				color: 'white',
 				fontFamily: 'sans-serif',
 				fontWeight: 'bold',
-				textShadow: '0 0 15px black'
+				textShadow: '0 0 15px black',
+				padding: '0 40px'
 			}}>
 				{title}
 			</div>
