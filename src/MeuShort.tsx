@@ -1,4 +1,4 @@
-import { AbsoluteFill, OffthreadVideo, Audio } from 'remotion';
+import { AbsoluteFill, OffthreadVideo, Audio, staticFile } from 'remotion';
 
 interface MyProps {
 	videoUrl: string;
@@ -9,10 +9,10 @@ interface MyProps {
 export const MyShort: React.FC<MyProps> = ({ videoUrl, title, backgroundMusicUrl }) => {
 	return (
 		<AbsoluteFill style={{ backgroundColor: 'black' }}>
-			{/* CAMADA 1: FUNDO BORRADO - Agora usando OffthreadVideo */}
+			{/* CAMADA 1: FUNDO BORRADO */}
 			<AbsoluteFill>
 				<OffthreadVideo
-					src={videoUrl}
+					src={staticFile(videoUrl)} // staticFile resolve o erro 404
 					muted
 					style={{
 						width: '100%',
@@ -24,10 +24,10 @@ export const MyShort: React.FC<MyProps> = ({ videoUrl, title, backgroundMusicUrl
 				/>
 			</AbsoluteFill>
 
-			{/* CAMADA 2: VÍDEO NO MEIO - Agora usando OffthreadVideo */}
+			{/* CAMADA 2: VÍDEO NO MEIO */}
 			<AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
 				<OffthreadVideo
-					src={videoUrl}
+					src={staticFile(videoUrl)} // staticFile resolve o erro 404
 					style={{
 						width: '90%',
 						borderRadius: '30px',
@@ -40,7 +40,7 @@ export const MyShort: React.FC<MyProps> = ({ videoUrl, title, backgroundMusicUrl
 			{/* CAMADA 3: ÁUDIO DO INSTAGRAM */}
 			{backgroundMusicUrl && (
 				<Audio 
-					src={backgroundMusicUrl} 
+					src={staticFile(backgroundMusicUrl)} // staticFile resolve o erro 404
 					volume={0.3}
 				/>
 			)}
