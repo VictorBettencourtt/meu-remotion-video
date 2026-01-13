@@ -9,14 +9,19 @@ const app = express();
 app.use(express.json());
 app.use('/outputs', express.static(path.resolve('./')));
 
-// Função para baixar arquivos no servidor
+// Garante que a pasta public existe para o Remotion enxergar os arquivos
+const publicPath = path.resolve('./public');
+if (!fs.existsSync(publicPath)) {
+    fs.mkdirSync(publicPath);
+}
+
 async function downloadMedia(url, name) {
-    const filePath = path.resolve(`./${name}`);
+    const filePath = path.join(publicPath, name); // Salva dentro de /public
     const writer = fs.createWriteStream(filePath);
     const response = await axios({ url, method: 'GET', responseType: 'stream' });
     response.data.pipe(writer);
     return new Promise((resolve, reject) => {
-        writer.on('finish', () => resolve(filePath));
+        writer.on('finish', () => resolve(name)); // Retorna só o nome do arquivo
         writer.on('error', reject);
     });
 }
@@ -26,18 +31,16 @@ app.post('/render', async (req, res) => {
     const compositionId = 'MeuVideoPrincipal';
 
     try {
-        console.log('Baixando arquivos temporários...');
-        // Baixa o vídeo e o áudio para o servidor antes de renderizar
-        const localVideo = await downloadMedia(videoUrl, `input-video-${Date.now()}.mp4`);
-        const localAudio = await downloadMedia(backgroundMusicUrl, `input-audio-${Date.now()}.mp4`);
+        console.log('Baixando arquivos na pasta public...');
+        const videoFile = await downloadMedia(videoUrl, `input-video-${Date.now()}.mp4`);
+        const audioFile = await downloadMedia(backgroundMusicUrl, `input-audio-${Date.now()}.mp4`);
 
-        console.log('Iniciando renderização com arquivos locais...');
         const bundleLocation = await bundle(path.resolve('./src/index.ts'));
 
         const inputProps = { 
-            videoUrl: localVideo, 
+            videoUrl: videoFile, 
             title, 
-            backgroundMusicUrl: localAudio 
+            backgroundMusicUrl: audioFile 
         };
 
         const composition = await selectComposition({
@@ -56,10 +59,6 @@ app.post('/render', async (req, res) => {
             outputLocation: outputLocation,
             inputProps,
         });
-
-        // Opcional: deletar arquivos de entrada para economizar espaço
-        // fs.unlinkSync(localVideo);
-        // fs.unlinkSync(localAudio);
 
         console.log('Render concluído:', fileName);
         res.send({ 
