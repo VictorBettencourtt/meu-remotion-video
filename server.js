@@ -9,7 +9,6 @@ const puppeteer = require('puppeteer');
 const app = express();
 app.use(express.json());
 app.use('/outputs', express.static(path.resolve('./')));
-
 const publicPath = path.resolve('./public');
 if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath);
 
@@ -22,20 +21,22 @@ async function takeScreenshot(url, name) {
     });
     try {
         const page = await browser.newPage();
-        // Aumentamos a resolução para o print sair nítido
-        await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
+        // Resolução 4K para o zoom não perder qualidade
+        await page.setViewport({ width: 2560, height: 1440, deviceScaleFactor: 2 });
         await page.goto(url, { waitUntil: 'networkidle2' });
 
-        // MÁGICA: Tenta achar o elemento que contém a imagem/vídeo da novidade
-        // No GitHub, o conteúdo do PR fica dentro da classe '.comment-body'
+        // Limpa a tela do GitHub pra focar só no n8n
+        await page.addStyleTag({ content: `
+            .Header, .gh-header, .js-header-back-to-top, .Box-header, 
+            .discussion-sidebar, .review-thread-reply, .TimelineItem-badge { display: none !important; }
+            .comment-body { padding: 50px !important; background: white !important; }
+        `});
+
         const element = await page.$('.comment-body');
-        
         if (element) {
-            // Tira print apenas do conteúdo do PR, ignorando o cabeçalho do GitHub
             await element.screenshot({ path: filePath });
         } else {
-            // Se não achar o elemento, tira da página mas corta o topo
-            await page.screenshot({ path: filePath });
+            await page.screenshot({ path: filePath, fullPage: true });
         }
 
         await browser.close();
@@ -50,18 +51,7 @@ async function downloadMedia(url, name) {
     if (!url || url === "" || url === "N/A") return "";
     const filePath = path.join(publicPath, name);
     const writer = fs.createWriteStream(filePath);
-    
-    // Adicionamos Headers para o Instagram não barrar o download
-    const response = await axios({ 
-        url, 
-        method: 'GET', 
-        responseType: 'stream',
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': '*/*'
-        }
-    });
-    
+    const response = await axios({ url, method: 'GET', responseType: 'stream', headers: { 'User-Agent': 'Mozilla/5.0' } });
     response.data.pipe(writer);
     return new Promise((resolve, reject) => {
         writer.on('finish', () => resolve(name));
@@ -74,27 +64,20 @@ app.post('/render', async (req, res) => {
     try {
         let finalMediaFile = "";
         if (screenshotUrl) {
-            finalMediaFile = await takeScreenshot(screenshotUrl, 'web-print');
+            finalMediaFile = await takeScreenshot(screenshotUrl, 'n8n-canvas');
         } else {
             finalMediaFile = await downloadMedia(videoUrl, `input-v-${Date.now()}.mp4`);
         }
-        // Tenta baixar a música, mas se der erro, continua sem áudio pra não travar o vídeo
-        let audioFile = "";
-        try {
-            audioFile = await downloadMedia(backgroundMusicUrl, `input-a-${Date.now()}.mp4`);
-        } catch (e) {
-            console.log("Aviso: Falha ao baixar música, gerando vídeo sem som.");
-        }
+        const audioFile = await downloadMedia(backgroundMusicUrl, `input-a-${Date.now()}.mp4`);
         const bundleLocation = await bundle(path.resolve('./src/index.ts'));
         const inputProps = { videoUrl: finalMediaFile, title, backgroundMusicUrl: audioFile, isImage: !!screenshotUrl };
         const composition = await selectComposition({ serveUrl: bundleLocation, id: compositionId, inputProps });
         const outputName = `final-${Date.now()}.mp4`;
-        const outputLocation = path.resolve(outputName);
-        await renderMedia({ composition, serveUrl: bundleLocation, codec: 'h264', outputLocation, inputProps });
+        await renderMedia({ composition, serveUrl: bundleLocation, codec: 'h264', outputLocation: path.resolve(outputName), inputProps });
         res.send({ message: 'Renderizado!', url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputName}` });
     } catch (error) {
         res.status(500).send({ error: error.message });
     }
 });
 
-app.listen(3000, '0.0.0.0', () => console.log(`Servidor pronto na porta 3000`));
+app.listen(3000, '0.0.0.0', () => console.log(`Servidor de Mídia pronto`));
