@@ -1,65 +1,59 @@
 import { AbsoluteFill, OffthreadVideo, Audio, staticFile } from 'remotion';
 
-interface MyProps {
-	videoUrl: string;
-	title: string;
-	backgroundMusicUrl: string;
-}
+export const MyShort: React.FC<{
+  videoUrl: string;
+  title: string;
+  backgroundMusicUrl: string;
+  titleTop: number;
+  titleSize: number;
+  titleColor: string;
+  borderRadius: number;
+  blurAmount: number;
+}> = ({ videoUrl, title, backgroundMusicUrl, titleTop, titleSize, titleColor, borderRadius, blurAmount }) => {
+  return (
+    <AbsoluteFill style={{ backgroundColor: 'black' }}>
+      {/* FUNDO DINÂMICO */}
+      <AbsoluteFill>
+        <OffthreadVideo
+          src={staticFile(videoUrl)}
+          muted
+          style={{
+            filter: `blur(${blurAmount}px) brightness(0.4)`,
+            objectFit: 'cover',
+            width: '100%',
+            height: '100%',
+            transform: 'scale(1.5)',
+          }}
+        />
+      </AbsoluteFill>
 
-export const MyShort: React.FC<MyProps> = ({ videoUrl, title, backgroundMusicUrl }) => {
-	return (
-		<AbsoluteFill style={{ backgroundColor: 'black' }}>
-			{/* CAMADA 1: FUNDO BORRADO */}
-			<AbsoluteFill>
-				<OffthreadVideo
-					src={staticFile(videoUrl)} // staticFile resolve o erro 404
-					muted
-					style={{
-						width: '100%',
-						height: '100%',
-						objectFit: 'cover',
-						filter: 'blur(25px) brightness(0.4)',
-						transform: 'scale(1.5)',
-					}}
-				/>
-			</AbsoluteFill>
+      {/* VÍDEO CENTRAL DINÂMICO */}
+      <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <OffthreadVideo
+          src={staticFile(videoUrl)}
+          style={{ 
+            width: '90%', 
+            borderRadius: `${borderRadius}px`, // Slider controla isso
+            border: '5px solid white' 
+          }}
+        />
+      </AbsoluteFill>
 
-			{/* CAMADA 2: VÍDEO NO MEIO */}
-			<AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
-				<OffthreadVideo
-					src={staticFile(videoUrl)} // staticFile resolve o erro 404
-					style={{
-						width: '90%',
-						borderRadius: '30px',
-						border: '5px solid white',
-						boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
-					}}
-				/>
-			</AbsoluteFill>
+      {/* TÍTULO DINÂMICO */}
+      <div style={{
+        position: 'absolute',
+        top: titleTop, // Slider controla isso
+        width: '100%',
+        textAlign: 'center',
+        fontSize: `${titleSize}px`, // Slider controla isso
+        color: titleColor, // Color picker controla isso
+        fontWeight: 'bold',
+        padding: '0 40px'
+      }}>
+        {title}
+      </div>
 
-			{/* CAMADA 3: ÁUDIO DO INSTAGRAM */}
-			{backgroundMusicUrl && (
-				<Audio 
-					src={staticFile(backgroundMusicUrl)} // staticFile resolve o erro 404
-					volume={0.3}
-				/>
-			)}
-
-			{/* CAMADA 4: TÍTULO */}
-			<div style={{
-				position: 'absolute',
-				top: 150,
-				width: '100%',
-				textAlign: 'center',
-				fontSize: '60px',
-				color: 'white',
-				fontFamily: 'sans-serif',
-				fontWeight: 'bold',
-				textShadow: '0 0 15px black',
-				padding: '0 40px'
-			}}>
-				{title}
-			</div>
-		</AbsoluteFill>
-	);
+      <Audio src={staticFile(backgroundMusicUrl)} volume={0.3} />
+    </AbsoluteFill>
+  );
 };

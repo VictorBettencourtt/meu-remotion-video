@@ -1,59 +1,39 @@
 import { MyShort } from './MeuShort';
 import { Composition } from "remotion";
-import { HelloWorld, myCompSchema } from "./HelloWorld";
-import { Logo, myCompSchema2 } from "./HelloWorld/Logo";
-
-// Each <Composition> is an entry in the sidebar!
+import { z } from "zod"; // O Remotion já vem com isso
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
       <Composition
-        // You can take the "id" to render a video:
-        // npx remotion render HelloWorld
-        id="HelloWorld"
-        component={HelloWorld}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-        // You can override these props for each render:
-        // https://www.remotion.dev/docs/parametrized-rendering
-        schema={myCompSchema}
-        defaultProps={{
-          titleText: "Welcome to Remotion",
-          titleColor: "#000000",
-          logoColor1: "#91EAE4",
-          logoColor2: "#86A8E7",
-        }}
-      />
-
-      {/* Mount any React component to make it show up in the sidebar and work on it individually! */}
-      <Composition
-        id="OnlyLogo"
-        component={Logo}
+        id="MeuVideoPrincipal"
+        component={MyShort as any}
         durationInFrames={150}
         fps={30}
         width={1080}
         height={1920}
-        schema={myCompSchema2}
+        // ISSO AQUI CRIA OS SLIDERS NO SEU NAVEGADOR:
+        schema={z.object({
+          videoUrl: z.string(),
+          title: z.string(),
+          backgroundMusicUrl: z.string(),
+          titleTop: z.number().min(0).max(1000).step(1), // Slider de altura
+          titleSize: z.number().min(20).max(200).step(1), // Slider de tamanho da fonte
+          titleColor: z.string(), // Input de cor
+          borderRadius: z.number().min(0).max(200).step(1), // Arredondamento do vídeo
+          blurAmount: z.number().min(0).max(100).step(1), // Intensidade do desfoque
+        })}
         defaultProps={{
-          logoColor1: "#91dAE2" as const,
-          logoColor2: "#86A8E7" as const,
+          videoUrl: "video-exemplo.mp4",
+          title: "EDITANDO AO VIVO NO SERVIDOR!",
+          backgroundMusicUrl: "audio-exemplo.mp4",
+          titleTop: 150,
+          titleSize: 60,
+          titleColor: "#ffffff",
+          borderRadius: 30,
+          blurAmount: 20,
         }}
       />
-      <Composition
-    id="MeuVideoPrincipal"
-    component={MyShort}
-    durationInFrames={150} // 5 segundos a 30fps
-    fps={30}
-    width={1080}
-    height={1920}
-    defaultProps={{
-        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-        title: "Meu Primeiro Vídeo Automatizado",
-    }}
-/>
     </>
   );
 };
