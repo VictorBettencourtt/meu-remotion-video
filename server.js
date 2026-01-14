@@ -66,7 +66,13 @@ app.post('/render', async (req, res) => {
         } else {
             finalMediaFile = await downloadMedia(videoUrl, `input-v-${Date.now()}.mp4`);
         }
-        const audioFile = await downloadMedia(backgroundMusicUrl, `input-a-${Date.now()}.mp4`);
+        // Tenta baixar a música, mas se der erro, continua sem áudio pra não travar o vídeo
+        let audioFile = "";
+        try {
+            audioFile = await downloadMedia(backgroundMusicUrl, `input-a-${Date.now()}.mp4`);
+        } catch (e) {
+            console.log("Aviso: Falha ao baixar música, gerando vídeo sem som.");
+        }
         const bundleLocation = await bundle(path.resolve('./src/index.ts'));
         const inputProps = { videoUrl: finalMediaFile, title, backgroundMusicUrl: audioFile, isImage: !!screenshotUrl };
         const composition = await selectComposition({ serveUrl: bundleLocation, id: compositionId, inputProps });
