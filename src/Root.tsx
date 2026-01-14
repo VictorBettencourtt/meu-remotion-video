@@ -1,12 +1,12 @@
 import { MyShort } from './MeuShort';
-import { MeuVideoLongo } from './MeuVideoLongo'; // Novo import
+import { MeuVideoLongo } from './MeuVideoLongo';
+import { NewsTemplate } from './NewsTemplate'; // NOVO IMPORT
 import { Composition } from "remotion";
 import { z } from "zod";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
-      {/* TEMPLATE VERTICAL (SHORTS/REELS) */}
       <Composition
         id="MasterShort"
         component={MyShort as any}
@@ -19,18 +19,18 @@ export const RemotionRoot: React.FC = () => {
           title: z.string(),
           backgroundMusicUrl: z.string(),
           layoutType: z.enum(['centralizado', 'noticiario', 'cinema']), 
-          titleTop: z.number().min(0).max(1000).step(1),
-          titleSize: z.number().min(20).max(200).step(1),
+          titleTop: z.number(),
+          titleSize: z.number(),
           titleColor: z.string(),
-          borderRadius: z.number().min(0).max(200).step(1),
-          blurAmount: z.number().min(0).max(100).step(1),
-          videoScale: z.number().min(0.5).max(1.5).step(0.01),
+          borderRadius: z.number(),
+          blurAmount: z.number(),
+          videoScale: z.number(),
           mostrarLogo: z.boolean(),
         })}
         defaultProps={{
           videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-          title: "ESTILO VERTICAL",
-          backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+          title: "SHORTS PADRÃO",
+          backgroundMusicUrl: "",
           layoutType: 'centralizado',
           titleTop: 200,
           titleSize: 70,
@@ -42,11 +42,10 @@ export const RemotionRoot: React.FC = () => {
         }}
       />
 
-      {/* NOVO: TEMPLATE HORIZONTAL (YOUTUBE PADRÃO) */}
       <Composition
         id="VideoHorizontal"
         component={MeuVideoLongo as any}
-        durationInFrames={900} // 30 segundos
+        durationInFrames={900}
         fps={30}
         width={1920}
         height={1080}
@@ -57,16 +56,38 @@ export const RemotionRoot: React.FC = () => {
           backgroundMusicUrl: z.string(),
           layoutType: z.enum(['split-screen', 'fullscreen', 'pip']), 
           accentColor: z.string(),
-          mostrarFacecam: z.boolean(),
         })}
         defaultProps={{
           videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-          title: "AUTOMAÇÃO DE VÍDEO COM N8N",
-          description: "Aprenda como escalar seu canal usando inteligência artificial e Remotion rodando na DigitalOcean.",
-          backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+          title: "VÍDEO HORIZONTAL",
+          description: "Descrição de teste.",
+          backgroundMusicUrl: "",
           layoutType: 'split-screen',
           accentColor: "#3b82f6",
-          mostrarFacecam: false,
+        }}
+      />
+
+      {/* NOVO: TEMPLATE DE NOTICIÁRIO PROFISSIONAL (TIPO SHOTSTACK) */}
+      <Composition
+        id="NewsReport"
+        component={NewsTemplate as any}
+        durationInFrames={900}
+        fps={30}
+        width={1920}
+        height={1080}
+        schema={z.object({
+          videoUrl: z.string(),
+          audioUrl: z.string(),
+          headline: z.string(),
+          subHeadline: z.string(),
+          logoUrl: z.string(),
+        })}
+        defaultProps={{
+          videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+          headline: "URGENTE: NOVO JULGAMENTO NO STF",
+          subHeadline: "Defesa alega que decisão de Moraes foi prematura",
+          logoUrl: "logo.png",
         }}
       />
     </>
