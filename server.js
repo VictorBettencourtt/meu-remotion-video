@@ -35,10 +35,21 @@ async function takeScreenshot(url, name) {
 }
 
 async function downloadMedia(url, name) {
-    if (!url || url === "") return "";
+    if (!url || url === "" || url === "N/A") return "";
     const filePath = path.join(publicPath, name);
     const writer = fs.createWriteStream(filePath);
-    const response = await axios({ url, method: 'GET', responseType: 'stream' });
+    
+    // Adicionamos Headers para o Instagram não barrar o download
+    const response = await axios({ 
+        url, 
+        method: 'GET', 
+        responseType: 'stream',
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*'
+        }
+    });
+    
     response.data.pipe(writer);
     return new Promise((resolve, reject) => {
         writer.on('finish', () => resolve(name));
