@@ -1,6 +1,6 @@
 import { MyShort } from './MeuShort';
 import { Composition } from "remotion";
-import { z } from "zod"; // O Remotion já vem com isso
+import { z } from "zod"; // Isso aqui tira o vermelho do 'z'
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -12,21 +12,20 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
-        // ISSO AQUI CRIA OS SLIDERS NO SEU NAVEGADOR:
         schema={z.object({
           videoUrl: z.string(),
           title: z.string(),
           backgroundMusicUrl: z.string(),
-          titleTop: z.number().min(0).max(1000).step(1), // Slider de altura
-          titleSize: z.number().min(20).max(200).step(1), // Slider de tamanho da fonte
-          titleColor: z.string(), // Input de cor
-          borderRadius: z.number().min(0).max(200).step(1), // Arredondamento do vídeo
-          blurAmount: z.number().min(0).max(100).step(1), // Intensidade do desfoque
+          titleTop: z.number().min(0).max(1000).step(1),
+          titleSize: z.number().min(20).max(200).step(1),
+          titleColor: z.string(),
+          borderRadius: z.number().min(0).max(200).step(1),
+          blurAmount: z.number().min(0).max(100).step(1),
         })}
         defaultProps={{
-          videoUrl: "video-exemplo.mp4",
+          videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
           title: "EDITANDO AO VIVO NO SERVIDOR!",
-          backgroundMusicUrl: "audio-exemplo.mp4",
+          backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           titleTop: 150,
           titleSize: 60,
           titleColor: "#ffffff",
