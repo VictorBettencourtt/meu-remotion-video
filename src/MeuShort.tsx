@@ -71,9 +71,7 @@ export const MyShort: React.FC<{
           textTransform: 'uppercase',
           letterSpacing: '-2px',
           padding: '0 60px',
-          lineHeight: '1',
-            cursor: 'move', // Faz o mouse virar a mãozinha de arrastar
-            userSelect: 'none'
+          lineHeight: '1'
       }}>
           {title}
       </div>
