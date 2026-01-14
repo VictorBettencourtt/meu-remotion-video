@@ -1,6 +1,6 @@
 import { MyShort } from './MeuShort';
 import { MeuVideoLongo } from './MeuVideoLongo';
-import { NewsTemplate } from './NewsTemplate'; // NOVO IMPORT
+import { NewsTemplate } from './NewsTemplate';
 import { Composition } from "remotion";
 import { z } from "zod";
 
@@ -30,7 +30,7 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
           title: "SHORTS PADRÃO",
-          backgroundMusicUrl: "",
+          backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           layoutType: 'centralizado',
           titleTop: 200,
           titleSize: 70,
@@ -60,14 +60,13 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
           title: "VÍDEO HORIZONTAL",
-          description: "Descrição de teste.",
-          backgroundMusicUrl: "",
+          description: "A descrição do vídeo aparece aqui.",
+          backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
           layoutType: 'split-screen',
           accentColor: "#3b82f6",
         }}
       />
 
-      {/* NOVO: TEMPLATE DE NOTICIÁRIO PROFISSIONAL (TIPO SHOTSTACK) */}
       <Composition
         id="NewsReport"
         component={NewsTemplate as any}
@@ -85,9 +84,9 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
           audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-          headline: "URGENTE: NOVO JULGAMENTO NO STF",
-          subHeadline: "Defesa alega que decisão de Moraes foi prematura",
-          logoUrl: "logo.png",
+          headline: "URGENTE: TITULO DA NOTICIA",
+          subHeadline: "Subtítulo detalhando o acontecimento agora",
+          logoUrl: "https://remotion.dev/img/logo-dark.png",
         }}
       />
     </>

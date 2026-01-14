@@ -25,7 +25,7 @@ export const MeuVideoLongo: React.FC<LongoProps> = ({
   return (
     <AbsoluteFill style={{ backgroundColor: '#0a0a0a', fontFamily: 'system-ui, sans-serif', color: 'white' }}>
       
-      {/* LAYOUT 1: SPLIT SCREEN (VÍDEO NA ESQUERDA, TEXTO NA DIREITA) */}
+      {/* LAYOUT 1: SPLIT SCREEN */}
       {layoutType === 'split-screen' && (
         <AbsoluteFill style={{ flexDirection: 'row' }}>
           <div style={{ width: '65%', height: '100%', padding: '40px' }}>
@@ -40,7 +40,7 @@ export const MeuVideoLongo: React.FC<LongoProps> = ({
         </AbsoluteFill>
       )}
 
-      {/* LAYOUT 2: FULLSCREEN COM OVERLAY */}
+      {/* LAYOUT 2: FULLSCREEN */}
       {layoutType === 'fullscreen' && (
         <AbsoluteFill>
           <OffthreadVideo src={getMediaSource(videoUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -53,7 +53,7 @@ export const MeuVideoLongo: React.FC<LongoProps> = ({
         </AbsoluteFill>
       )}
 
-      {/* LAYOUT 3: PIP (VÍDEO FLUTUANTE) */}
+      {/* LAYOUT 3: PIP */}
       {layoutType === 'pip' && (
         <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', background: `radial-gradient(circle, ${accentColor}33 0%, #000 100%)` }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -65,7 +65,10 @@ export const MeuVideoLongo: React.FC<LongoProps> = ({
         </AbsoluteFill>
       )}
 
-      <Audio src={getMediaSource(backgroundMusicUrl)} volume={0.2} />
+      {/* TRAVA DE SEGURANÇA: Só carrega o áudio se a URL não for vazia */}
+      {backgroundMusicUrl && backgroundMusicUrl !== "" && (
+        <Audio src={getMediaSource(backgroundMusicUrl)} volume={0.2} />
+      )}
     </AbsoluteFill>
   );
 };
