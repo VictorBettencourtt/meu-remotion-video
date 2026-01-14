@@ -22,10 +22,22 @@ async function takeScreenshot(url, name) {
     });
     try {
         const page = await browser.newPage();
-        await page.setViewport({ width: 1280, height: 720 });
+        // Aumentamos a resolução para o print sair nítido
+        await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
         await page.goto(url, { waitUntil: 'networkidle2' });
-        await page.addStyleTag({ content: '.Header, .js-header-back-to-top { display: none !important; }' });
-        await page.screenshot({ path: filePath });
+
+        // MÁGICA: Tenta achar o elemento que contém a imagem/vídeo da novidade
+        // No GitHub, o conteúdo do PR fica dentro da classe '.comment-body'
+        const element = await page.$('.comment-body');
+        
+        if (element) {
+            // Tira print apenas do conteúdo do PR, ignorando o cabeçalho do GitHub
+            await element.screenshot({ path: filePath });
+        } else {
+            // Se não achar o elemento, tira da página mas corta o topo
+            await page.screenshot({ path: filePath });
+        }
+
         await browser.close();
         return fileName;
     } catch (e) {
