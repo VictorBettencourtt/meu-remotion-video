@@ -72,6 +72,8 @@ export const MyShort: React.FC<{
           letterSpacing: '-2px',
           padding: '0 60px',
           lineHeight: '1',
+            cursor: 'move', // Faz o mouse virar a mãozinha de arrastar
+            userSelect: 'none'
       }}>
           {title}
       </div>
