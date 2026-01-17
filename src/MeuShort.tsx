@@ -1,5 +1,12 @@
-import { AbsoluteFill, OffthreadVideo, useVideoConfig, interpolate, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, OffthreadVideo, interpolate, useCurrentFrame, staticFile } from 'remotion';
 import React from 'react';
+
+const getMediaSource = (src: string) => {
+	if (src.startsWith('http')) {
+		return src;
+	}
+	return staticFile(src);
+};
 
 export const MeuShort: React.FC<{
 	videoSrc: string;
@@ -19,7 +26,7 @@ export const MeuShort: React.FC<{
 			boxSizing: 'border-box'
 		}}>
 			<OffthreadVideo
-				src={videoSrc}
+				src={getMediaSource(videoSrc)}
 				style={{
 					width: '100%',
 					height: '100%',
