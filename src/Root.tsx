@@ -17,7 +17,7 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         schema={z.object({
-          videoUrl: z.string(),
+          videoSrc: z.string(),
           title: z.string(),
           backgroundMusicUrl: z.string(),
           layoutType: z.enum(['centralizado', 'noticiario', 'cinema']), 
@@ -30,7 +30,7 @@ export const RemotionRoot: React.FC = () => {
           mostrarLogo: z.boolean(),
         })}
         defaultProps={{
-          videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          videoSrc: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
           title: "SHORTS PADRÃO",
           backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           layoutType: 'centralizado',
@@ -109,7 +109,7 @@ export const RemotionRoot: React.FC = () => {
           isImage: z.boolean(),
         })}
         defaultProps={{
-          videoUrl: "https://github.com/user-attachments/assets/a49f412a-3336-43fa-a781-320550ffd5f1",
+          videoUrl: "https://github.com/user-attachments/assets/a49f412a-3336-43fa-a781-320550ffm5f1",
           title: "AUTOMAÇÃO DE ELITE N8N",
           backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           isImage: true,
