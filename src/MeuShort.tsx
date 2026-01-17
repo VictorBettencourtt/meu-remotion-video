@@ -15,7 +15,7 @@ export const MeuShort: React.FC<{
 	return (
 		<AbsoluteFill style={{ 
 			backgroundColor: 'black',
-			border: '12px solid #3b82f6',
+			border: '15px solid gold',
 			boxSizing: 'border-box'
 		}}>
 			<OffthreadVideo
