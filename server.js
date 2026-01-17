@@ -21,9 +21,9 @@ async function downloadMedia(url, nameWithoutExt) {
         headers: { 'User-Agent': 'Mozilla/5.0' }
     });
 
-    // Pega o tipo real do arquivo (image/png, video/mp4, etc)
     const contentType = response.headers['content-type'] || "";
-    const isActuallyImage = contentType.includes('image') || url.includes('assets');
+    // Detecta imagem pelo header ou pela URL
+    const isActuallyImage = contentType.includes('image') || url.includes('assets') || url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
     const extension = isActuallyImage ? '.png' : '.mp4';
     const fileName = `${nameWithoutExt}${extension}`;
     const filePath = path.join(publicPath, fileName);
@@ -40,7 +40,8 @@ async function downloadMedia(url, nameWithoutExt) {
 app.post('/render', async (req, res) => {
     const { videoUrl, title, backgroundMusicUrl, screenshotUrl, compositionId = 'MasterShort' } = req.body;
     try {
-        let finalMedia = { file: "", isImage: false };
+        console.log('Iniciando processamento...');
+        let mediaResult = { file: "", isImage: false };
         
         if (screenshotUrl) {
             const browser = await puppeteer.launch({ executablePath: '/usr/bin/chromium', args: ['--no-sandbox'] });
@@ -50,19 +51,21 @@ app.post('/render', async (req, res) => {
             await page.goto(screenshotUrl, { waitUntil: 'networkidle2' });
             await page.screenshot({ path: path.join(publicPath, fileName) });
             await browser.close();
-            finalMedia = { file: fileName, isImage: true };
+            mediaResult = { file: fileName, isImage: true };
         } else {
-            finalMedia = await downloadMedia(videoUrl, `input-${Date.now()}`);
+            mediaResult = await downloadMedia(videoUrl, `input-${Date.now()}`);
         }
 
         const audio = await downloadMedia(backgroundMusicUrl, `audio-${Date.now()}`);
         const bundleLocation = await bundle(path.resolve('./src/index.ts'));
 
+        // SEGREDO: Se for imagem, mandamos videoUrl vazio para o React não tentar carregar o vídeo
         const inputProps = { 
-            videoUrl: finalMedia.file, 
+            videoUrl: mediaResult.isImage ? "" : mediaResult.file, 
+            imageUrl: mediaResult.isImage ? mediaResult.file : "",
             title, 
             backgroundMusicUrl: audio.file, 
-            isImage: finalMedia.isImage 
+            isImage: mediaResult.isImage 
         };
 
         const composition = await selectComposition({ serveUrl: bundleLocation, id: compositionId, inputProps });

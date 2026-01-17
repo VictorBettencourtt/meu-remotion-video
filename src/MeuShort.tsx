@@ -3,25 +3,24 @@ import React from 'react';
 
 export const MyShort: React.FC<{
 	videoUrl: string;
+    imageUrl: string;
 	title: string;
 	backgroundMusicUrl: string;
 	isImage: boolean;
-}> = ({ videoUrl, title, backgroundMusicUrl, isImage }) => {
+}> = ({ videoUrl, imageUrl, title, backgroundMusicUrl, isImage }) => {
 	const frame = useCurrentFrame();
 	const { durationInFrames } = useVideoConfig();
 	const zoom = interpolate(frame, [0, durationInFrames], [1, 1.15]);
 	
-	const mediaSrc = videoUrl ? staticFile(videoUrl) : "";
-
 	return (
 		<AbsoluteFill style={{ backgroundColor: 'black', fontFamily: 'sans-serif' }}>
 			
 			{/* FUNDO AMBIENTE */}
 			<AbsoluteFill style={{ filter: 'blur(30px) brightness(0.3)', transform: 'scale(1.4)' }}>
 				{isImage ? (
-					<Img src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+					<Img src={staticFile(imageUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
 				) : (
-					mediaSrc && <OffthreadVideo src={mediaSrc} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+					videoUrl && <OffthreadVideo src={staticFile(videoUrl)} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
 				)}
 			</AbsoluteFill>
 
@@ -36,9 +35,9 @@ export const MyShort: React.FC<{
 					transform: isImage ? `scale(${zoom})` : 'none'
 				}}>
 					{isImage ? (
-						<Img src={mediaSrc} style={{ width: '100%' }} />
+						<Img src={staticFile(imageUrl)} style={{ width: '100%' }} />
 					) : (
-						mediaSrc && <OffthreadVideo src={mediaSrc} style={{ width: '100%' }} />
+						videoUrl && <OffthreadVideo src={staticFile(videoUrl)} style={{ width: '100%' }} />
 					)}
 				</div>
 			</AbsoluteFill>
