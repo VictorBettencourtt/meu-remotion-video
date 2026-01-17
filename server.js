@@ -13,76 +13,56 @@ app.use('/outputs', express.static(path.resolve('./')));
 const publicPath = path.resolve('./public');
 if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath);
 
-async function downloadMedia(url, nameWithoutExtension) {
-    if (!url || url === "" || url === "N/A") return "";
+async function downloadMedia(url, nameWithoutExt) {
+    if (!url || url === "" || url === "N/A") return { file: "", isImage: false };
     
-    // Detecta se é imagem ou vídeo pelo link ou pelo conteúdo
-    const isImage = url.includes('assets') || url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-    const extension = isImage ? '.png' : '.mp4';
-    const fileName = `${nameWithoutExtension}${extension}`;
-    const filePath = path.join(publicPath, fileName);
-    
-    const writer = fs.createWriteStream(filePath);
     const response = await axios({ 
-        url, 
-        method: 'GET', 
-        responseType: 'stream',
+        url, method: 'GET', responseType: 'stream',
         headers: { 'User-Agent': 'Mozilla/5.0' }
     });
-    
+
+    // Pega o tipo real do arquivo (image/png, video/mp4, etc)
+    const contentType = response.headers['content-type'] || "";
+    const isActuallyImage = contentType.includes('image') || url.includes('assets');
+    const extension = isActuallyImage ? '.png' : '.mp4';
+    const fileName = `${nameWithoutExt}${extension}`;
+    const filePath = path.join(publicPath, fileName);
+
+    const writer = fs.createWriteStream(filePath);
     response.data.pipe(writer);
+
     return new Promise((resolve, reject) => {
-        writer.on('finish', () => resolve(fileName));
+        writer.on('finish', () => resolve({ file: fileName, isImage: isActuallyImage }));
         writer.on('error', reject);
     });
-}
-
-async function takeScreenshot(url, name) {
-    const fileName = `${name}-${Date.now()}.png`;
-    const filePath = path.join(publicPath, fileName);
-    const browser = await puppeteer.launch({
-        executablePath: '/usr/bin/chromium',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    try {
-        const page = await browser.newPage();
-        await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
-        await page.goto(url, { waitUntil: 'networkidle2' });
-        await page.addStyleTag({ content: '.Header, .gh-header { display: none !important; }' });
-        const element = await page.$('.comment-body');
-        if (element) await element.screenshot({ path: filePath });
-        else await page.screenshot({ path: filePath });
-        await browser.close();
-        return fileName;
-    } catch (e) {
-        await browser.close();
-        throw e;
-    }
 }
 
 app.post('/render', async (req, res) => {
     const { videoUrl, title, backgroundMusicUrl, screenshotUrl, compositionId = 'MasterShort' } = req.body;
     try {
-        let finalMediaFile = "";
-        let isActuallyImage = false;
-
+        let finalMedia = { file: "", isImage: false };
+        
         if (screenshotUrl) {
-            finalMediaFile = await takeScreenshot(screenshotUrl, 'n8n-print');
-            isActuallyImage = true;
+            const browser = await puppeteer.launch({ executablePath: '/usr/bin/chromium', args: ['--no-sandbox'] });
+            const page = await browser.newPage();
+            const fileName = `print-${Date.now()}.png`;
+            await page.setViewport({ width: 1920, height: 1080 });
+            await page.goto(screenshotUrl, { waitUntil: 'networkidle2' });
+            await page.screenshot({ path: path.join(publicPath, fileName) });
+            await browser.close();
+            finalMedia = { file: fileName, isImage: true };
         } else {
-            // Se o link de vídeo na verdade for uma imagem do GitHub Assets
-            isActuallyImage = videoUrl.includes('assets') || videoUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-            finalMediaFile = await downloadMedia(videoUrl, `input-${Date.now()}`);
+            finalMedia = await downloadMedia(videoUrl, `input-${Date.now()}`);
         }
 
-        const audioFile = await downloadMedia(backgroundMusicUrl, `audio-${Date.now()}`);
+        const audio = await downloadMedia(backgroundMusicUrl, `audio-${Date.now()}`);
         const bundleLocation = await bundle(path.resolve('./src/index.ts'));
 
         const inputProps = { 
-            videoUrl: finalMediaFile, 
+            videoUrl: finalMedia.file, 
             title, 
-            backgroundMusicUrl: audioFile, 
-            isImage: isActuallyImage 
+            backgroundMusicUrl: audio.file, 
+            isImage: finalMedia.isImage 
         };
 
         const composition = await selectComposition({ serveUrl: bundleLocation, id: compositionId, inputProps });
