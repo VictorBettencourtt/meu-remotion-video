@@ -1,12 +1,14 @@
 import { MyShort } from './MeuShort';
 import { MeuVideoLongo } from './MeuVideoLongo';
 import { NewsTemplate } from './NewsTemplate';
+import { NateStyle } from './NateStyle'; // O novo template está aqui
 import { Composition } from "remotion";
 import { z } from "zod";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* 1. TEMPLATE VERTICAL PADRÃO (SHORTS/REELS) */}
       <Composition
         id="MasterShort"
         component={MyShort as any}
@@ -42,6 +44,7 @@ export const RemotionRoot: React.FC = () => {
         }}
       />
 
+      {/* 2. TEMPLATE HORIZONTAL (YOUTUBE 16:9) */}
       <Composition
         id="VideoHorizontal"
         component={MeuVideoLongo as any}
@@ -67,6 +70,7 @@ export const RemotionRoot: React.FC = () => {
         }}
       />
 
+      {/* 3. TEMPLATE DE NOTICIÁRIO (ESTILO SHOTSTACK) */}
       <Composition
         id="NewsReport"
         component={NewsTemplate as any}
@@ -87,6 +91,28 @@ export const RemotionRoot: React.FC = () => {
           headline: "URGENTE: TITULO DA NOTICIA",
           subHeadline: "Subtítulo detalhando o acontecimento agora",
           logoUrl: "https://remotion.dev/img/logo-dark.png",
+        }}
+      />
+
+      {/* 4. NOVO: TEMPLATE ESTILO NATE HERK (SCANNER FULLSCREEN) */}
+      <Composition
+        id="NateStyle"
+        component={NateStyle as any}
+        durationInFrames={300} // 10 segundos
+        fps={30}
+        width={1080}
+        height={1920}
+        schema={z.object({
+          videoUrl: z.string(),
+          title: z.string(),
+          backgroundMusicUrl: z.string(),
+          isImage: z.boolean(),
+        })}
+        defaultProps={{
+          videoUrl: "https://github.com/user-attachments/assets/a49f412a-3336-43fa-a781-320550ffd5f1",
+          title: "AUTOMAÇÃO DE ELITE N8N",
+          backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+          isImage: true,
         }}
       />
     </>
