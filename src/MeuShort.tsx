@@ -16,60 +16,50 @@ export const MyShort: React.FC<{
 	const frame = useCurrentFrame();
 	const { fps, durationInFrames } = useVideoConfig();
 
-	// 1. EFEITO DE ENTRADA (MOLA)
-	const entrance = spring({
-		frame,
-		fps,
-		config: { damping: 12 },
-	});
+	// Animação de entrada (Pop)
+	const entrance = spring({ frame, fps, config: { damping: 12 } });
 
-	// 2. ANIMAÇÃO NATE HERK: "SCAN" E "ZOOM DINÂMICO"
-	// O vídeo começa em 1.1x e termina em 1.4x de zoom
-	const scale = interpolate(frame, [0, durationInFrames], [1.1, 1.4]);
-	
-	// Ele começa um pouco para cima e termina um pouco para baixo (efeito de rolagem)
-	const translateY = interpolate(frame, [0, durationInFrames], [30, -80]);
-	
-	// Um leve balanço pro lado pra não parecer robótico
-	const rotate = interpolate(frame, [0, durationInFrames], [-1, 1]);
+	// MOVIMENTO AGRESSIVO (Para ser visível em vídeos curtos)
+	// Zoom de 1.1x para 1.5x
+	const scale = interpolate(frame, [0, durationInFrames], [1.1, 1.5]);
+	// Movimento de subida mais forte
+	const translateY = interpolate(frame, [0, durationInFrames], [50, -100]);
+	// Rotação para dar o estilo "Handheld"
+	const rotate = interpolate(frame, [0, durationInFrames], [-2, 2]);
 
 	const mediaSrc = getMediaSource(videoUrl);
 
 	return (
-		<AbsoluteFill style={{ backgroundColor: '#020617', fontFamily: 'system-ui, sans-serif' }}>
+		<AbsoluteFill style={{ backgroundColor: '#000', fontFamily: 'system-ui, sans-serif' }}>
 			
-			{/* CAMADA 1: FUNDO AMBIENTE COM BLUR PESADO */}
-			<AbsoluteFill style={{ filter: 'blur(40px) brightness(0.2)', transform: 'scale(1.8)' }}>
-				{isImage ? (
+			{/* FUNDO BORRADO */}
+			<AbsoluteFill style={{ filter: 'blur(30px) brightness(0.2)', transform: 'scale(1.5)' }}>
+				{isImage || videoUrl.includes('assets') ? (
 					<img src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
 				) : (
 					<OffthreadVideo src={mediaSrc} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
 				)}
 			</AbsoluteFill>
 
-			{/* CAMADA 2: MOLDURA "GLASSMORFISM" */}
-			<AbsoluteFill style={{ 
-				justifyContent: 'center', 
-				alignItems: 'center',
-				transform: `scale(${entrance})`,
-				opacity: entrance
-			}}>
+			{/* BOX CENTRAL COM MOVIMENTO */}
+			<AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
 				<div style={{
 					width: '92%',
 					height: '65%',
 					borderRadius: '40px',
 					overflow: 'hidden',
-					border: '2px solid rgba(255,255,255,0.2)',
-					boxShadow: '0 50px 100px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.05)',
-					backgroundColor: '#0f172a'
+					border: '6px solid white',
+					boxShadow: '0 50px 100px rgba(0,0,0,0.9)',
+					transform: `scale(${entrance})`,
+					opacity: entrance,
+                    backgroundColor: '#1a1a1a'
 				}}>
-					{/* O CONTEÚDO COM MOVIMENTO DE CÂMERA DINÂMICA */}
 					<div style={{
 						width: '100%',
 						height: '100%',
-						transform: isImage ? `scale(${scale}) translateY(${translateY}px) rotate(${rotate}deg)` : 'none'
+						transform: `scale(${scale}) translateY(${translateY}px) rotate(${rotate}deg)`
 					}}>
-						{isImage ? (
+						{isImage || videoUrl.includes('assets') ? (
 							<img src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
 						) : (
 							<OffthreadVideo src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
@@ -78,37 +68,32 @@ export const MyShort: React.FC<{
 				</div>
 			</AbsoluteFill>
 
-			{/* CAMADA 3: TÍTULO BADGE (ANIME DE BAIXO PRA CIMA) */}
+			{/* TÍTULO ESTILIZADO */}
 			<div style={{
 				position: 'absolute',
-				top: 100,
+				top: 80,
 				width: '100%',
 				textAlign: 'center',
 				padding: '0 40px',
-				transform: `translateY(${(1 - entrance) * -50}px)`,
-				opacity: entrance
+				opacity: entrance,
+				transform: `translateY(${(1 - entrance) * -50}px)`
 			}}>
 				<span style={{
 					backgroundColor: 'white',
 					color: 'black',
-					padding: '12px 35px',
-					fontSize: '48px',
+					padding: '15px 40px',
+					fontSize: '42px',
 					fontWeight: '900',
-					borderRadius: '20px',
-					boxShadow: '0 15px 40px rgba(0,0,0,0.6)',
+					borderRadius: '25px',
+					boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
 					display: 'inline-block',
-					lineHeight: '1.2',
-					textTransform: 'uppercase'
+					lineHeight: '1.2'
 				}}>
 					{title}
 				</span>
 			</div>
 
-			{/* ÁUDIO */}
-			{backgroundMusicUrl && (
-				<Audio src={getMediaSource(backgroundMusicUrl)} volume={0.12} />
-			)}
-
+			{backgroundMusicUrl && <Audio src={getMediaSource(backgroundMusicUrl)} volume={0.15} />}
 		</AbsoluteFill>
 	);
 };
