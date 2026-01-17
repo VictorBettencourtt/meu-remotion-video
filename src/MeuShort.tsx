@@ -1,30 +1,30 @@
-import { AbsoluteFill, OffthreadVideo, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img } from 'remotion';
+import { AbsoluteFill, OffthreadVideo, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 import React from 'react';
 
 export const MyShort: React.FC<{
 	videoUrl: string;
-    imageUrl: string;
 	title: string;
 	backgroundMusicUrl: string;
-	isImage: boolean;
-}> = ({ videoUrl, imageUrl, title, backgroundMusicUrl, isImage }) => {
+}> = ({ videoUrl, title, backgroundMusicUrl }) => {
 	const frame = useCurrentFrame();
 	const { durationInFrames } = useVideoConfig();
-	const zoom = interpolate(frame, [0, durationInFrames], [1, 1.15]);
 	
+	// Movimento de zoom lento
+	const zoom = interpolate(frame, [0, durationInFrames], [1, 1.1]);
+
 	return (
 		<AbsoluteFill style={{ backgroundColor: 'black', fontFamily: 'sans-serif' }}>
 			
-			{/* FUNDO AMBIENTE */}
-			<AbsoluteFill style={{ filter: 'blur(30px) brightness(0.3)', transform: 'scale(1.4)' }}>
-				{isImage ? (
-					<Img src={staticFile(imageUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-				) : (
-					videoUrl && <OffthreadVideo src={staticFile(videoUrl)} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-				)}
+			{/* CAMADA 1: FUNDO BORRADO */}
+			<AbsoluteFill style={{ filter: 'blur(25px) brightness(0.3)', transform: 'scale(1.4)' }}>
+				<OffthreadVideo 
+					src={staticFile(videoUrl)} 
+					muted 
+					style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+				/>
 			</AbsoluteFill>
 
-			{/* CONTEÚDO PRINCIPAL */}
+			{/* CAMADA 2: VÍDEO CENTRAL */}
 			<AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
 				<div style={{
 					width: '92%',
@@ -32,17 +32,13 @@ export const MyShort: React.FC<{
 					overflow: 'hidden',
 					border: '5px solid white',
 					boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
-					transform: isImage ? `scale(${zoom})` : 'none'
+                    transform: `scale(${zoom})`
 				}}>
-					{isImage ? (
-						<Img src={staticFile(imageUrl)} style={{ width: '100%' }} />
-					) : (
-						videoUrl && <OffthreadVideo src={staticFile(videoUrl)} style={{ width: '100%' }} />
-					)}
+					<OffthreadVideo src={staticFile(videoUrl)} style={{ width: '100%' }} />
 				</div>
 			</AbsoluteFill>
 
-			{/* TÍTULO */}
+			{/* CAMADA 3: TÍTULO */}
 			<div style={{
 				position: 'absolute',
 				top: 120,
@@ -59,8 +55,9 @@ export const MyShort: React.FC<{
 				{title}
 			</div>
 
+			{/* ÁUDIO */}
 			{backgroundMusicUrl && (
-				<Audio src={staticFile(backgroundMusicUrl)} volume={0.15} />
+				<Audio src={staticFile(backgroundMusicUrl)} volume={0.2} />
 			)}
 		</AbsoluteFill>
 	);
