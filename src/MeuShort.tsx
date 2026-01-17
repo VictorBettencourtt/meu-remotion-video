@@ -1,64 +1,53 @@
-import { AbsoluteFill, OffthreadVideo, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, OffthreadVideo, useVideoConfig, interpolate, useCurrentFrame } from 'remotion';
 import React from 'react';
 
-export const MyShort: React.FC<{
-	videoUrl: string;
+export const MeuShort: React.FC<{
+	videoSrc: string;
 	title: string;
-	backgroundMusicUrl: string;
-}> = ({ videoUrl, title, backgroundMusicUrl }) => {
+}> = ({ videoSrc, title }) => {
 	const frame = useCurrentFrame();
-	const { durationInFrames } = useVideoConfig();
-	
-	// Movimento de zoom lento
-	const zoom = interpolate(frame, [0, durationInFrames], [1, 1.1]);
+
+	const opacity = interpolate(frame, [0, 15], [0, 1], {
+		extrapolateLeft: 'clamp',
+		extrapolateRight: 'clamp',
+	});
 
 	return (
-		<AbsoluteFill style={{ backgroundColor: 'black', fontFamily: 'sans-serif' }}>
-			
-			{/* CAMADA 1: FUNDO BORRADO */}
-			<AbsoluteFill style={{ filter: 'blur(25px) brightness(0.3)', transform: 'scale(1.4)' }}>
-				<OffthreadVideo 
-					src={staticFile(videoUrl)} 
-					muted 
-					style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-				/>
-			</AbsoluteFill>
-
-			{/* CAMADA 2: VÍDEO CENTRAL */}
-			<AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
-				<div style={{
-					width: '92%',
-					borderRadius: '40px',
-					overflow: 'hidden',
-					border: '5px solid white',
-					boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
-                    transform: `scale(${zoom})`
-				}}>
-					<OffthreadVideo src={staticFile(videoUrl)} style={{ width: '100%' }} />
-				</div>
-			</AbsoluteFill>
-
-			{/* CAMADA 3: TÍTULO */}
-			<div style={{
-				position: 'absolute',
-				top: 120,
-				width: '100%',
-				textAlign: 'center',
-				color: 'white',
-				fontSize: '70px',
-				fontWeight: '900',
-				padding: '0 50px',
-				textShadow: '0 10px 30px black',
-				textTransform: 'uppercase',
-				lineHeight: '1'
+		<AbsoluteFill style={{ 
+			backgroundColor: 'black',
+			border: '12px solid #3b82f6',
+			boxSizing: 'border-box'
+		}}>
+			<OffthreadVideo
+				src={videoSrc}
+				style={{
+					width: '100%',
+					height: '100%',
+					objectFit: 'cover',
+				}}
+			/>
+			<AbsoluteFill style={{
+				justifyContent: 'center',
+				alignItems: 'center',
+				display: 'flex',
+				flexDirection: 'column',
+				padding: '60px'
 			}}>
-				{title}
-			</div>
-
-			{/* ÁUDIO */}
-			{backgroundMusicUrl && (
-				<Audio src={staticFile(backgroundMusicUrl)} volume={0.2} />
-			)}
+				<h1 style={{
+					color: '#faff00',
+					fontSize: '90px',
+					fontWeight: 900,
+					textAlign: 'center',
+					fontFamily: 'system-ui, -apple-system, sans-serif',
+					textShadow: '0 0 15px rgba(250, 255, 0, 0.8), 0 0 30px rgba(250, 255, 0, 0.6)',
+					opacity,
+					margin: 0,
+					textTransform: 'uppercase',
+					lineHeight: '1.1'
+				}}>
+					{title}
+				</h1>
+			</AbsoluteFill>
 		</AbsoluteFill>
 	);
 };
