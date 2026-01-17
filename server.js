@@ -9,36 +9,49 @@ const puppeteer = require('puppeteer');
 const app = express();
 app.use(express.json());
 app.use('/outputs', express.static(path.resolve('./')));
+
 const publicPath = path.resolve('./public');
 if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath);
+
+async function downloadMedia(url, nameWithoutExtension) {
+    if (!url || url === "" || url === "N/A") return "";
+    
+    // Detecta se é imagem ou vídeo pelo link ou pelo conteúdo
+    const isImage = url.includes('assets') || url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+    const extension = isImage ? '.png' : '.mp4';
+    const fileName = `${nameWithoutExtension}${extension}`;
+    const filePath = path.join(publicPath, fileName);
+    
+    const writer = fs.createWriteStream(filePath);
+    const response = await axios({ 
+        url, 
+        method: 'GET', 
+        responseType: 'stream',
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    
+    response.data.pipe(writer);
+    return new Promise((resolve, reject) => {
+        writer.on('finish', () => resolve(fileName));
+        writer.on('error', reject);
+    });
+}
 
 async function takeScreenshot(url, name) {
     const fileName = `${name}-${Date.now()}.png`;
     const filePath = path.join(publicPath, fileName);
     const browser = await puppeteer.launch({
         executablePath: '/usr/bin/chromium',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     try {
         const page = await browser.newPage();
-        // Resolução 4K para o zoom não perder qualidade
-        await page.setViewport({ width: 2560, height: 1440, deviceScaleFactor: 2 });
+        await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 });
         await page.goto(url, { waitUntil: 'networkidle2' });
-
-        // Limpa a tela do GitHub pra focar só no n8n
-        await page.addStyleTag({ content: `
-            .Header, .gh-header, .js-header-back-to-top, .Box-header, 
-            .discussion-sidebar, .review-thread-reply, .TimelineItem-badge { display: none !important; }
-            .comment-body { padding: 50px !important; background: white !important; }
-        `});
-
+        await page.addStyleTag({ content: '.Header, .gh-header { display: none !important; }' });
         const element = await page.$('.comment-body');
-        if (element) {
-            await element.screenshot({ path: filePath });
-        } else {
-            await page.screenshot({ path: filePath, fullPage: true });
-        }
-
+        if (element) await element.screenshot({ path: filePath });
+        else await page.screenshot({ path: filePath });
         await browser.close();
         return fileName;
     } catch (e) {
@@ -47,37 +60,47 @@ async function takeScreenshot(url, name) {
     }
 }
 
-async function downloadMedia(url, name) {
-    if (!url || url === "" || url === "N/A") return "";
-    const filePath = path.join(publicPath, name);
-    const writer = fs.createWriteStream(filePath);
-    const response = await axios({ url, method: 'GET', responseType: 'stream', headers: { 'User-Agent': 'Mozilla/5.0' } });
-    response.data.pipe(writer);
-    return new Promise((resolve, reject) => {
-        writer.on('finish', () => resolve(name));
-        writer.on('error', reject);
-    });
-}
-
 app.post('/render', async (req, res) => {
     const { videoUrl, title, backgroundMusicUrl, screenshotUrl, compositionId = 'MasterShort' } = req.body;
     try {
         let finalMediaFile = "";
+        let isActuallyImage = false;
+
         if (screenshotUrl) {
-            finalMediaFile = await takeScreenshot(screenshotUrl, 'n8n-canvas');
+            finalMediaFile = await takeScreenshot(screenshotUrl, 'n8n-print');
+            isActuallyImage = true;
         } else {
-            finalMediaFile = await downloadMedia(videoUrl, `input-v-${Date.now()}.mp4`);
+            // Se o link de vídeo na verdade for uma imagem do GitHub Assets
+            isActuallyImage = videoUrl.includes('assets') || videoUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+            finalMediaFile = await downloadMedia(videoUrl, `input-${Date.now()}`);
         }
-        const audioFile = await downloadMedia(backgroundMusicUrl, `input-a-${Date.now()}.mp4`);
+
+        const audioFile = await downloadMedia(backgroundMusicUrl, `audio-${Date.now()}`);
         const bundleLocation = await bundle(path.resolve('./src/index.ts'));
-        const inputProps = { videoUrl: finalMediaFile, title, backgroundMusicUrl: audioFile, isImage: !!screenshotUrl };
+
+        const inputProps = { 
+            videoUrl: finalMediaFile, 
+            title, 
+            backgroundMusicUrl: audioFile, 
+            isImage: isActuallyImage 
+        };
+
         const composition = await selectComposition({ serveUrl: bundleLocation, id: compositionId, inputProps });
         const outputName = `final-${Date.now()}.mp4`;
-        await renderMedia({ composition, serveUrl: bundleLocation, codec: 'h264', outputLocation: path.resolve(outputName), inputProps });
+
+        await renderMedia({
+            composition,
+            serveUrl: bundleLocation,
+            codec: 'h264',
+            outputLocation: path.resolve(outputName),
+            inputProps,
+        });
+
         res.send({ message: 'Renderizado!', url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputName}` });
     } catch (error) {
+        console.error(error);
         res.status(500).send({ error: error.message });
     }
 });
 
-app.listen(3000, '0.0.0.0', () => console.log(`Servidor de Mídia pronto`));
+app.listen(3000, '0.0.0.0', () => console.log(`Servidor pronto`));
