@@ -1,10 +1,10 @@
 import { AbsoluteFill, OffthreadVideo, interpolate, useCurrentFrame, staticFile } from 'remotion';
 import React from 'react';
 
+// Função auxiliar para lidar com mídias locais e remotas
 const getMediaSource = (src: string) => {
-	if (src.startsWith('http')) {
-		return src;
-	}
+	if (!src) return "";
+	if (src.startsWith('http')) return src;
 	return staticFile(src);
 };
 
