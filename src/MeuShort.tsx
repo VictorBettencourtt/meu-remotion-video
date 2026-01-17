@@ -12,8 +12,9 @@ export const MyShort: React.FC<{
   videoUrl: string;
   title: string;
   backgroundMusicUrl: string;
+  narrationUrl: string;
   isImage: boolean;
-}> = ({ videoUrl, title, backgroundMusicUrl, isImage }) => {
+}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, isImage }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const zoom = interpolate(frame, [0, durationInFrames], [1, 1.15]);
@@ -68,7 +69,11 @@ export const MyShort: React.FC<{
       </div>
 
       {backgroundMusicUrl && (
-        <Audio src={getMediaSource(backgroundMusicUrl)} volume={0.15} />
+        <Audio src={getMediaSource(backgroundMusicUrl)} volume={0.1} />
+      )}
+
+      {narrationUrl && (
+        <Audio src={getMediaSource(narrationUrl)} volume={1.0} />
       )}
     </AbsoluteFill>
   );
