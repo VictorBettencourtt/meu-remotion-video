@@ -1,11 +1,9 @@
 import { AbsoluteFill, OffthreadVideo, interpolate, useCurrentFrame, staticFile } from 'remotion';
 import React from 'react';
 
-// Função auxiliar para lidar com mídias locais e remotas
-const getMediaSource = (src: string) => {
-	if (!src) return "";
-	if (src.startsWith('http')) return src;
-	return staticFile(src);
+const getMediaSource = (url: string) => {
+	if (url.startsWith('http')) return url;
+	return staticFile(url);
 };
 
 export const MeuShort: React.FC<{
