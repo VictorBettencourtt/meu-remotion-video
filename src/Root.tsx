@@ -43,7 +43,7 @@ export const RemotionRoot: React.FC = () => {
           isImage: z.boolean().optional(),
         })}
         defaultProps={{
-          videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          videoUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475",
           title: "ESTILO NATE",
           backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           narrationUrl: "",
