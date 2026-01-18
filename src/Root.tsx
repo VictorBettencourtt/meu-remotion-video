@@ -9,7 +9,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="MasterShort"
         component={MyShort as any}
-        durationInFrames={450}
+        durationInFrames={1800}
         fps={30}
         width={1080}
         height={1920}
@@ -18,6 +18,7 @@ export const RemotionRoot: React.FC = () => {
           title: z.string(),
           backgroundMusicUrl: z.string(),
           narrationUrl: z.string().optional(),
+          captionText: z.string().optional(),
           isImage: z.boolean().optional(),
         })}
         defaultProps={{
@@ -25,6 +26,7 @@ export const RemotionRoot: React.FC = () => {
           title: "SISTEMA RECUPERADO!",
           backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           narrationUrl: "",
+          captionText: "Este é um resumo gerado por IA para o seu vídeo de Big Tech.",
           isImage: false,
         }}
       />
