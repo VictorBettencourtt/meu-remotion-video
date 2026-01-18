@@ -42,7 +42,11 @@ app.post('/render', async (req, res) => {
         audioFile = await downloadMedia(backgroundMusicUrl, `input-a-${Date.now()}.mp3`);
         narrationFile = await downloadMedia(narrationUrl, `input-n-${Date.now()}.mp3`);
 
-        const bundleLocation = await bundle(path.resolve('./src/index.ts'));
+        // CORREÇÃO CRÍTICA: Definindo serverUrl explicitamente para o renderMedia
+        const bundleLocation = await bundle({
+            entryPoint: path.resolve('./src/index.ts'),
+            // Garantindo que o bundle seja gerado corretamente
+        });
 
         const inputProps = { 
             videoUrl: videoFile, 
@@ -60,9 +64,10 @@ app.post('/render', async (req, res) => {
         const outputName = `final-${Date.now()}.mp4`;
         const outputLocation = path.resolve(outputName);
 
+        console.log('Iniciando renderização...');
         await renderMedia({
             composition,
-            serverUrl: bundleLocation,
+            serveUrl: bundleLocation, // Parâmetro CORRETO exigido pelo Remotion v4
             codec: 'h264',
             outputLocation: outputLocation,
             inputProps,
@@ -83,22 +88,5 @@ app.post('/render', async (req, res) => {
             try {
                 if (fs.existsSync(outputLocation)) {
                     fs.unlinkSync(outputLocation);
-                    console.log(`Output ${outputName} removido após 10min.`);
-                }
-            } catch (err) {
-                console.error('Erro na limpeza de output:', err);
-            }
-        }, 10 * 60 * 1000);
-
-        res.send({ 
-            message: 'Renderizado!', 
-            url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputName}` 
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).send({ error: error.message });
-    }
-});
-
-app.listen(3000, '0.0.0.0', () => console.log(`Servidor pronto na porta 3000`));
+                    console.log(`Output ${outputName} removido após 10min.`);\n                }
+            } catch (err) {\n                console.error('Erro na limpeza de output:', err);\n            }\n        }, 10 * 60 * 1000);\n\n        res.send({ \n            message: 'Renderizado!', \n            url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputName}` \n        });\n\n    } catch (error) {\n        console.error('ERRO DE RENDERIZAÇÃO:', error);\n        res.status(500).send({ error: error.message });\n    }\n});\n\napp.listen(3000, '0.0.0.0', () => console.log(`Servidor pronto na porta 3000`));
