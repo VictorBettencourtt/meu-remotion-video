@@ -31,10 +31,16 @@ export const NateStyle: React.FC<{
         transform: `translateY(${translateY}px) scale(${zoom})`,
         zIndex: 1
       }}>
-        {isImage ? (
-          <Img src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
+        {/* 
+            CORREÇÃO CRÍTICA: 
+            O erro "Error loading image with src: ... .mp4" acontece porque o componente <Img /> 
+            está tentando carregar um arquivo de vídeo. 
+            Vamos garantir que o componente correto seja usado baseado na extensão real do arquivo baixado.
+        */}
+        {(videoUrl.toLowerCase().endsWith('.mp4') || videoUrl.toLowerCase().endsWith('.mov')) ? (
           <OffthreadVideo src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <Img src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
       </AbsoluteFill>
 
