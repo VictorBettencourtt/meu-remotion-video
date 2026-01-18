@@ -13,7 +13,7 @@ export const NateStyle: React.FC<{
   backgroundMusicUrl: string;
   narrationUrl?: string;
   isImage?: boolean;
-}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, isImage = true }) => {
+}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   
@@ -22,6 +22,9 @@ export const NateStyle: React.FC<{
   const translateY = interpolate(frame, [0, durationInFrames], [0, -150]);
 
   const mediaSrc = getMediaSource(videoUrl);
+  
+  // Lógica de detecção de tipo baseada no nome do arquivo baixado
+  const isVideo = videoUrl.toLowerCase().includes('.mp4') || videoUrl.toLowerCase().includes('.mov');
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000', fontFamily: 'system-ui' }}>
@@ -31,16 +34,16 @@ export const NateStyle: React.FC<{
         transform: `translateY(${translateY}px) scale(${zoom})`,
         zIndex: 1
       }}>
-        {/* 
-            CORREÇÃO CRÍTICA: 
-            O erro "Error loading image with src: ... .mp4" acontece porque o componente <Img /> 
-            está tentando carregar um arquivo de vídeo. 
-            Vamos garantir que o componente correto seja usado baseado na extensão real do arquivo baixado.
-        */}
-        {(videoUrl.toLowerCase().endsWith('.mp4') || videoUrl.toLowerCase().endsWith('.mov')) ? (
-          <OffthreadVideo src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        {isVideo ? (
+          <OffthreadVideo 
+            src={mediaSrc} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+          />
         ) : (
-          <Img src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <Img 
+            src={mediaSrc} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+          />
         )}
       </AbsoluteFill>
 
