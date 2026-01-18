@@ -52,6 +52,30 @@ export const RemotionRoot: React.FC = () => {
           isImage: true,
         }}
       />
+      <Composition
+        id="HorizontalNate"
+        component={MyShort as any}
+        durationInFrames={450}
+        fps={30}
+        width={1920}
+        height={1080}
+        schema={z.object({
+          videoUrl: z.string(),
+          title: z.string(),
+          backgroundMusicUrl: z.string(),
+          narrationUrl: z.string().optional(),
+          captionText: z.string().optional(),
+          isImage: z.boolean().optional(),
+        })}
+        defaultProps={{
+          videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          title: "YOUTUBE HORIZONTAL",
+          backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+          narrationUrl: "",
+          captionText: "Este é um layout 16:9 automatizado com scanner lateral estilo Nate Herk.",
+          isImage: false,
+        }}
+      />
     </>
   );
 };
