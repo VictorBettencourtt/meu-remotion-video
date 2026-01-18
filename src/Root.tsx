@@ -9,7 +9,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="MasterShort"
         component={MyShort as any}
-        durationInFrames={1800}
+        durationInFrames={450} // Valor default de fallback
         fps={30}
         width={1080}
         height={1920}
@@ -20,6 +20,7 @@ export const RemotionRoot: React.FC = () => {
           narrationUrl: z.string().optional(),
           captionText: z.string().optional(),
           isImage: z.boolean().optional(),
+          durationInFrames: z.number().optional(),
         })}
         defaultProps={{
           videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
@@ -28,6 +29,7 @@ export const RemotionRoot: React.FC = () => {
           narrationUrl: "",
           captionText: "Este é um resumo gerado por IA para o seu vídeo de Big Tech.",
           isImage: false,
+          durationInFrames: 450,
         }}
       />
       <Composition
