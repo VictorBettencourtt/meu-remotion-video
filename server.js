@@ -15,12 +15,22 @@ if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath);
 async function downloadMedia(url, baseName) {
     if (!url || url === "" || url === "N/A") return "";
     
-    // Tenta detectar a extensão correta da URL ou Content-Type
-    let extension = path.extname(url).split('?')[0] || '';
-    if (!extension) {
-        if (baseName.includes('v-')) extension = '.mp4';
-        if (baseName.includes('a-')) extension = '.mp3';
-        if (baseName.includes('n-')) extension = '.mp3';
+    // LOGICA DE EXTENSÃO ULTRA-SEGURA (Evita ENAMETOOLONG)
+    let extension = '.bin'; // Default seguro
+    
+    // Tenta pegar a extensão ignorando query params
+    const urlPath = url.split('?')[0];
+    const detectedExt = path.extname(urlPath).toLowerCase();
+    
+    const validExtensions = ['.mp4', '.mov', '.mp3', '.wav', '.jpg', '.jpeg', '.png', '.webp', '.avif'];
+    
+    if (validExtensions.includes(detectedExt)) {
+        extension = detectedExt;
+    } else {
+        // Fallback baseado no prefixo do baseName
+        if (baseName.startsWith('v-')) extension = '.mp4';
+        if (baseName.startsWith('a-')) extension = '.mp3';
+        if (baseName.startsWith('n-')) extension = '.mp3';
     }
     
     const fileName = `${baseName}${extension}`;
@@ -39,7 +49,6 @@ async function downloadMedia(url, baseName) {
             timeout: 60000,
         });
 
-        const totalSize = parseInt(response.headers['content-length'], 10);
         const writer = fs.createWriteStream(filePath);
         response.data.pipe(writer);
 
@@ -48,13 +57,9 @@ async function downloadMedia(url, baseName) {
                 const stats = fs.statSync(filePath);
                 console.log(`[FACTORY] Finalizado: ${fileName} (${stats.size} bytes)`);
                 
-                if (!isNaN(totalSize) && stats.size !== totalSize) {
-                    console.warn(`[FACTORY] Aviso: Tamanho do arquivo (${stats.size}) difere do Content-Length (${totalSize})`);
-                }
-
-                if (stats.size < 1000) {
+                if (stats.size < 100) {
                     fs.unlinkSync(filePath);
-                    reject(new Error(`Arquivo corrompido ou incompleto: ${fileName}`));
+                    reject(new Error(`Arquivo inválido (muito pequeno): ${fileName}`));
                 }
                 resolve(fileName);
             });
@@ -79,7 +84,7 @@ app.post('/render', async (req, res) => {
     try {
         console.log(`--- Iniciando Renderização: ${compositionId} ---`);
         
-        // Download com detecção de extensão
+        // Baixando com nomes curtos e seguros
         if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}`);
         if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}`);
         if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}`);
@@ -97,15 +102,13 @@ app.post('/render', async (req, res) => {
             isImage: compositionId === 'NateStyle' || (videoFile && videoFile.match(/\.(jpg|jpeg|png|webp|avif)/i) !== null)
         };
 
-        console.log(`[FACTORY] Props: isImage=${inputProps.isImage}, video=${videoFile}`);
-
         const composition = await selectComposition({
             serveUrl: bundleLocation,
             id: compositionId,
             inputProps,
         });
 
-        const outputName = `final-${Date.now()}.mp4`;
+        const outputName = `render-${Date.now()}.mp4`;
         const outputLocation = path.resolve(outputName);
 
         await renderMedia({
@@ -119,7 +122,7 @@ app.post('/render', async (req, res) => {
             }
         });
 
-        // Cleanup inputs
+        // Cleanup
         [videoFile, audioFile, narrationFile].forEach(f => {
             if (f) {
                 const p = path.join(publicPath, f);
@@ -140,7 +143,7 @@ app.post('/render', async (req, res) => {
         console.error('[ERRO]', error.message);
         res.status(500).send({ 
             error: error.message,
-            details: "Erro técnico na renderização. Verifique se os links de mídia são válidos e públicos."
+            details: "Erro técnico na renderização. Filenames longos ou URLs expiradas."
         });
     }
 });
@@ -148,4 +151,4 @@ app.post('/render', async (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2 na porta ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2.1 na porta ${PORT}`));
