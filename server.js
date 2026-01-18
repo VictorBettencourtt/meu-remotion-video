@@ -15,19 +15,15 @@ if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath);
 async function downloadMedia(url, baseName) {
     if (!url || url === "" || url === "N/A") return "";
     
-    // LOGICA DE EXTENSÃO ULTRA-SEGURA (Evita ENAMETOOLONG)
-    let extension = '.bin'; // Default seguro
-    
-    // Tenta pegar a extensão ignorando query params
     const urlPath = url.split('?')[0];
-    const detectedExt = path.extname(urlPath).toLowerCase();
+    let detectedExt = path.extname(urlPath).toLowerCase();
     
     const validExtensions = ['.mp4', '.mov', '.mp3', '.wav', '.jpg', '.jpeg', '.png', '.webp', '.avif'];
-    
+    let extension = '.bin';
+
     if (validExtensions.includes(detectedExt)) {
         extension = detectedExt;
     } else {
-        // Fallback baseado no prefixo do baseName
         if (baseName.startsWith('v-')) extension = '.mp4';
         if (baseName.startsWith('a-')) extension = '.mp3';
         if (baseName.startsWith('n-')) extension = '.mp3';
@@ -57,14 +53,15 @@ async function downloadMedia(url, baseName) {
                 const stats = fs.statSync(filePath);
                 console.log(`[FACTORY] Finalizado: ${fileName} (${stats.size} bytes)`);
                 
-                if (stats.size < 100) {
-                    fs.unlinkSync(filePath);
-                    reject(new Error(`Arquivo inválido (muito pequeno): ${fileName}`));
+                if (stats.size < 1000) {
+                    try { fs.unlinkSync(filePath); } catch(e) {}
+                    reject(new Error(`Arquivo corrompido ou incompleto: ${fileName}`));
+                    return;
                 }
                 resolve(fileName);
             });
             writer.on('error', (err) => {
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch(e) {}
                 reject(err);
             });
         });
@@ -84,7 +81,7 @@ app.post('/render', async (req, res) => {
     try {
         console.log(`--- Iniciando Renderização: ${compositionId} ---`);
         
-        // Baixando com nomes curtos e seguros
+        // Download sequencial para evitar race conditions em I/O limitados
         if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}`);
         if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}`);
         if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}`);
@@ -98,7 +95,6 @@ app.post('/render', async (req, res) => {
             title: title || "Sem título", 
             backgroundMusicUrl: audioFile,
             narrationUrl: narrationFile,
-            // Se for NateStyle ou a extensão for de imagem, isImage = true
             isImage: compositionId === 'NateStyle' || (videoFile && videoFile.match(/\.(jpg|jpeg|png|webp|avif)/i) !== null)
         };
 
@@ -122,16 +118,16 @@ app.post('/render', async (req, res) => {
             }
         });
 
-        // Cleanup
+        // Cleanup com proteção
         [videoFile, audioFile, narrationFile].forEach(f => {
             if (f) {
                 const p = path.join(publicPath, f);
-                if (fs.existsSync(p)) fs.unlinkSync(p);
+                try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch(e) {}
             }
         });
 
         setTimeout(() => {
-            if (fs.existsSync(outputLocation)) fs.unlinkSync(outputLocation);
+            try { if (fs.existsSync(outputLocation)) fs.unlinkSync(outputLocation); } catch(e) {}
         }, 10 * 60 * 1000);
 
         res.send({ 
@@ -143,7 +139,7 @@ app.post('/render', async (req, res) => {
         console.error('[ERRO]', error.message);
         res.status(500).send({ 
             error: error.message,
-            details: "Erro técnico na renderização. Filenames longos ou URLs expiradas."
+            details: "Erro técnico na renderização. Filenames longos ou mídia corrompida."
         });
     }
 });
@@ -151,4 +147,4 @@ app.post('/render', async (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2.1 na porta ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2.2 na porta ${PORT}`));
