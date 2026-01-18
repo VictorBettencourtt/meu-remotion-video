@@ -131,6 +131,8 @@ app.post('/render', async (req, res) => {
             codec: 'h264',
             outputLocation: outputLocation,
             inputProps,
+            concurrency: 4,
+            downloadBehavior: { concurrency: 5 },
             onProgress: ({ progress }) => {
                 console.log(`Render: ${(progress * 100).toFixed(0)}%`);
             }
