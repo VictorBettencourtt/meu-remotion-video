@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
+const puppeteer = require('puppeteer');
 
 const app = express();
 app.use(express.json());
@@ -12,6 +13,44 @@ app.use('/outputs', express.static(path.resolve('./')));
 const publicPath = path.resolve('./public');
 if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath);
 
+async function takeScreenshot(url, fileName) {
+    const filePath = path.join(publicPath, fileName);
+    console.log(`[PUPPETEER] Tirando print de: ${url}`);
+    
+    const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: "new"
+    });
+    
+    try {
+        const page = await browser.newPage();
+        await page.setViewport({ width: 1280, height: 2000 });
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+
+        // Esconder elementos de UI do GitHub para foco no código/PR
+        await page.addStyleTag({
+            content: `
+                .Header, .gh-header, .js-header-wrapper, 
+                .footer, .AppHeader, #repository-container-header {
+                    display: none !important;
+                }
+                body {
+                    background-color: #0d1117 !important;
+                }
+            `
+        });
+
+        // Aguarda um pouco para o CSS ser aplicado e a página estabilizar
+        await new Promise(r => setTimeout(r, 2000));
+
+        await page.screenshot({ path: filePath, fullPage: false });
+        console.log(`[PUPPETEER] Print salvo: ${fileName}`);
+        return fileName;
+    } finally {
+        await browser.close();
+    }
+}
+
 async function downloadMedia(url, baseName) {
     if (!url || url === "" || url === "N/A") return "";
     
@@ -19,20 +58,16 @@ async function downloadMedia(url, baseName) {
     let detectedExt = path.extname(urlPath).toLowerCase();
     
     const validExtensions = ['.mp4', '.mov', '.mp3', '.wav', '.jpg', '.jpeg', '.png', '.webp', '.avif'];
-    let extension = '.bin';
-
-    if (validExtensions.includes(detectedExt)) {
-        extension = detectedExt;
-    } else {
-        if (baseName.startsWith('v-')) extension = '.mp4';
-        if (baseName.startsWith('a-')) extension = '.mp3';
-        if (baseName.startsWith('n-')) extension = '.mp3';
+    
+    // Se for link do GitHub ou não tiver extensão de mídia, tratamos como Screenshot
+    if (url.includes('github.com') || !validExtensions.includes(detectedExt)) {
+        if (!detectedExt || !['.mp3', '.wav'].includes(detectedExt)) {
+            return await takeScreenshot(url, `v-${Date.now()}.png`);
+        }
     }
-    
-    const fileName = `${baseName}${extension}`;
+
+    const fileName = `${baseName}${detectedExt}`;
     const filePath = path.join(publicPath, fileName);
-    
-    console.log(`[FACTORY] Baixando: ${url} -> ${fileName}`);
     
     try {
         const response = await axios({
@@ -46,18 +81,9 @@ async function downloadMedia(url, baseName) {
         });
 
         fs.writeFileSync(filePath, Buffer.from(response.data));
-        
-        const stats = fs.statSync(filePath);
-        console.log(`[FACTORY] Finalizado: ${fileName} (${stats.size} bytes)`);
-        
-        if (stats.size < 1000) {
-            try { fs.unlinkSync(filePath); } catch(e) {}
-            throw new Error(`Arquivo corrompido ou incompleto: ${fileName}`);
-        }
         return fileName;
     } catch (error) {
         console.error(`[FACTORY] Erro no download: ${error.message}`);
-        if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch(e) {}
         throw error;
     }
 }
@@ -70,9 +96,8 @@ app.post('/render', async (req, res) => {
     let narrationFile = '';
 
     try {
-        console.log(`--- Iniciando Renderização: ${compositionId} ---`);
+        console.log(`--- Iniciando Renderização Vision: ${compositionId} ---`);
         
-        // Download sequencial garantido com escrita síncrona
         if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}`);
         if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}`);
         if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}`);
@@ -81,12 +106,14 @@ app.post('/render', async (req, res) => {
             entryPoint: path.resolve('./src/index.ts'),
         });
 
+        const isImage = videoFile.endsWith('.png') || videoFile.endsWith('.jpg') || videoFile.endsWith('.jpeg');
+
         const inputProps = { 
             videoUrl: videoFile, 
             title: title || "Sem título", 
             backgroundMusicUrl: audioFile,
             narrationUrl: narrationFile,
-            isImage: compositionId === 'NateStyle' || (videoFile && videoFile.match(/\.(jpg|jpeg|png|webp|avif)/i) !== null)
+            isImage: isImage
         };
 
         const composition = await selectComposition({
@@ -97,9 +124,6 @@ app.post('/render', async (req, res) => {
 
         const outputName = `render-${Date.now()}.mp4`;
         const outputLocation = path.resolve(outputName);
-
-        // LOGICA DE SEGURANÇA: FFmpeg Check
-        console.log('[FACTORY] Iniciando motor de renderização...');
 
         await renderMedia({
             composition,
@@ -112,7 +136,6 @@ app.post('/render', async (req, res) => {
             }
         });
 
-        // Cleanup com atraso de segurança
         setTimeout(() => {
             [videoFile, audioFile, narrationFile].forEach(f => {
                 if (f) {
@@ -120,11 +143,7 @@ app.post('/render', async (req, res) => {
                     try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch(e) {}
                 }
             });
-        }, 5000);
-
-        setTimeout(() => {
-            try { if (fs.existsSync(outputLocation)) fs.unlinkSync(outputLocation); } catch(e) {}
-        }, 10 * 60 * 1000);
+        }, 10000);
 
         res.send({ 
             success: true, 
@@ -132,15 +151,14 @@ app.post('/render', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[ERRO CRÍTICO]', error.message);
+        console.error('[ERRO VISION]', error.message);
         res.status(500).send({ 
             error: error.message,
-            details: "O motor de mídia falhou ao processar o arquivo. Verifique se o link de vídeo é direto."
+            details: "Falha ao processar URL ou capturar screenshot."
         });
     }
 });
 
 app.get('/health', (req, res) => res.send('OK'));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2.4 na porta 3000`));
+app.listen(3000, '0.0.0.0', () => console.log(`Remotion Factory Vision v3.0 on port 3000`));
