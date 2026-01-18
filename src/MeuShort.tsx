@@ -22,13 +22,13 @@ export const MyShort: React.FC<{
   // PERSPECTIVA 3D DINÂMICA
   const rotateX = interpolate(frame, [0, durationInFrames], [5, -5]);
   const rotateY = interpolate(frame, [0, durationInFrames], [-5, 5]);
-  const zoom = interpolate(frame, [0, durationInFrames], [1, 1.15]);
-
-  // MOVIMENTO COM INÉRCIA (SCROLL)
+  
+  // MOVIMENTO NATE HERK (Scanner + Zoom)
+  const zoom = interpolate(frame, [0, durationInFrames], [1.1, 1.3]);
   const translateY = interpolate(
     frame,
     [0, durationInFrames],
-    [0, -500],
+    [50, -100],
     {
       easing: Easing.bezier(0.33, 1, 0.68, 1),
       extrapolateRight: 'clamp',
@@ -53,20 +53,21 @@ export const MyShort: React.FC<{
         )}
       </AbsoluteFill>
 
-      {/* CONTAINER CENTRALIZADO */}
+      {/* CONTAINER CENTRALIZADO VISUAL PREMIUM */}
       <AbsoluteFill style={{ 
         justifyContent: 'center', 
         alignItems: 'center', 
         zIndex: 1
       }}>
         <div style={{
-          width: '92%',
+          width: '90%',
           height: '80%',
           borderRadius: '40px',
-          border: '4px solid white',
+          border: '4px solid #3b82f6',
           overflow: 'hidden',
           position: 'relative',
           boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
+          backgroundColor: '#000'
         }}>
           <div style={{
             width: '100%',
@@ -74,7 +75,7 @@ export const MyShort: React.FC<{
             transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${zoom})`,
           }}>
             <div style={{
-              transform: isImage ? `translateY(${translateY}px)` : 'none',
+              transform: `translateY(${translateY}px)`,
               width: '100%',
               height: isImage ? 'auto' : '100%',
             }}>
@@ -116,26 +117,35 @@ export const MyShort: React.FC<{
         </div>
       </div>
 
-      {/* LEGENDA DINÂMICA */}
+      {/* LEGENDA FUTURISTA */}
       {captionText && (
         <div style={{
           position: 'absolute',
           bottom: 120,
           width: '100%',
-          textAlign: 'center',
-          padding: '0 60px',
+          display: 'flex',
+          justifyContent: 'center',
+          padding: '0 40px',
           zIndex: 10
         }}>
-          <p style={{
-            color: 'white',
-            fontSize: '42px',
-            fontWeight: '800',
-            textShadow: '0 4px 10px rgba(0,0,0,0.9)',
-            lineHeight: '1.2',
-            margin: 0
+          <div style={{
+            background: 'rgba(0,0,0,0.8)',
+            padding: '20px 40px',
+            borderRadius: '15px',
+            border: '1px solid #3b82f6',
+            textAlign: 'center',
+            maxWidth: '90%'
           }}>
-            {captionText}
-          </p>
+            <p style={{
+              color: '#fff',
+              fontSize: '45px',
+              fontWeight: '900',
+              margin: 0,
+              lineHeight: '1.2',
+            }}>
+              {captionText}
+            </p>
+          </div>
         </div>
       )}
 
