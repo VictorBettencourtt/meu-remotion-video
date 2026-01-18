@@ -1,4 +1,5 @@
 import { MyShort } from './MeuShort';
+import { NateStyle } from './NateStyle';
 import { Composition } from "remotion";
 import { z } from "zod";
 
@@ -29,7 +30,7 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id="NateStyle"
-        component={MyShort as any}
+        component={NateStyle as any}
         durationInFrames={450}
         fps={30}
         width={1080}
@@ -46,7 +47,7 @@ export const RemotionRoot: React.FC = () => {
           title: "ESTILO NATE",
           backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           narrationUrl: "",
-          isImage: false,
+          isImage: true,
         }}
       />
     </>
