@@ -1,4 +1,4 @@
-import { AbsoluteFill, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img } from 'remotion';
+import { AbsoluteFill, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img, OffthreadVideo } from 'remotion';
 import React from 'react';
 
 const getMediaSource = (src: string) => {
@@ -11,37 +11,41 @@ export const NateStyle: React.FC<{
   videoUrl: string;
   title: string;
   backgroundMusicUrl: string;
-  narrationUrl: string;
-}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl }) => {
+  narrationUrl?: string;
+  isImage?: boolean;
+}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, isImage = true }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   
-  // Efeito Nate Herk: Scroll infinito para baixo
-  // Começa no topo (0) e termina no final da imagem (-altura_restante)
-  const translateY = interpolate(
-    frame, 
-    [0, durationInFrames], 
-    [0, -100], 
-    { extrapolateRight: 'clamp' }
-  );
+  // MOVIMENTO NATE HERK: Zoom constante e deslocamento vertical
+  const zoom = interpolate(frame, [0, durationInFrames], [1.1, 1.3]);
+  const translateY = interpolate(frame, [0, durationInFrames], [0, -100]);
 
   const mediaSrc = getMediaSource(videoUrl);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#050505', fontFamily: 'system-ui' }}>
+    <AbsoluteFill style={{ backgroundColor: '#000', fontFamily: 'system-ui' }}>
       
-      {/* BACKGROUND COM OVERLAY */}
-      <AbsoluteFill>
-         <div style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,1) 80%)',
-            zIndex: 1
-         }} />
+      {/* VIBE DARK: Fundo borrado premium */}
+      <AbsoluteFill style={{ 
+        filter: 'blur(50px) brightness(0.15)', 
+        transform: 'scale(1.2)',
+        zIndex: 0
+      }}>
+        {isImage ? (
+          <Img src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <OffthreadVideo src={mediaSrc} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        )}
       </AbsoluteFill>
 
-      {/* MÁQUINA DE SCROLL (ESTILO NATE) */}
+      {/* GRADIENTE DE PROFUNDIDADE */}
+      <AbsoluteFill style={{ 
+        background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(0,0,0,0.8) 100%)', 
+        zIndex: 1 
+      }} />
+
+      {/* MOLDURA PREMIUM E CONTEÚDO */}
       <AbsoluteFill style={{ 
         justifyContent: 'center', 
         alignItems: 'center',
@@ -51,52 +55,59 @@ export const NateStyle: React.FC<{
           width: '85%',
           height: '70%',
           borderRadius: '24px',
-          border: '2px solid rgba(255,255,255,0.1)',
+          border: '2px solid rgba(255,255,255,0.2)',
           boxShadow: '0 50px 100px rgba(0,0,0,0.9)',
-          backgroundColor: '#fff',
+          backgroundColor: '#000', // ELIMINAÇÃO DE GAPS
           overflow: 'hidden',
           position: 'relative'
         }}>
           <div style={{
-            transform: `translateY(${translateY}%)`,
-            width: '100%'
+            transform: `translateY(${translateY}px) scale(${zoom})`,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'flex-start'
           }}>
-             <Img src={mediaSrc} style={{ width: '100%' }} />
+            {isImage ? (
+              <Img src={mediaSrc} style={{ width: '100%', objectFit: 'contain' }} />
+            ) : (
+              <OffthreadVideo src={mediaSrc} style={{ width: '100%', objectFit: 'contain' }} />
+            )}
           </div>
 
-          {/* SCANNER LINE */}
+          {/* SCANNER LINE (HUD STYLE) */}
           <div style={{
              position: 'absolute',
              top: '50%',
              width: '100%',
              height: '2px',
              background: 'linear-gradient(90deg, transparent, #3b82f6, transparent)',
-             boxShadow: '0 0 20px #3b82f6',
+             boxShadow: '0 0 20px rgba(59,130,246,0.8)',
              zIndex: 10
           }} />
         </div>
       </AbsoluteFill>
 
-      {/* OVERLAY DE TÍTULO TECH */}
+      {/* TIPOGRAFIA HUD: Badge Style */}
       <div style={{
-        position: 'absolute',
-        bottom: 80,
-        width: '100%',
-        textAlign: 'center',
-        padding: '0 60px',
-        zIndex: 20
+        position: 'absolute', 
+        top: 80, 
+        width: '100%', 
+        textAlign: 'center', 
+        zIndex: 30
       }}>
         <div style={{
-          backgroundColor: '#3b82f6',
-          color: 'white',
-          fontSize: '42px',
+          backgroundColor: '#ffffff',
+          color: '#000000',
+          fontSize: '32px',
           fontWeight: '900',
-          padding: '10px 30px',
+          padding: '12px 35px',
           display: 'inline-block',
           borderRadius: '12px',
           textTransform: 'uppercase',
-          letterSpacing: '2px',
-          boxShadow: '0 10px 30px rgba(59,130,246,0.5)'
+          letterSpacing: '1px',
+          boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+          fontFamily: 'system-ui'
         }}>
           {title}
         </div>
