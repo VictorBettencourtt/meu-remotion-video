@@ -16,36 +16,50 @@ async function downloadMedia(url, name) {
     if (!url || url === "" || url === "N/A") return "";
     const filePath = path.join(publicPath, name);
     
-    console.log(`Iniciando download: ${url} -> ${name}`);
+    console.log(`[DOWNLOAD] Tentando: ${url}`);
     
-    const response = await axios({ 
-        url, 
-        method: 'GET', 
-        responseType: 'stream',
-        headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
+    try {
+        const response = await axios({
+            url,
+            method: 'GET',
+            responseType: 'stream',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'video/*,audio/*,image/*,*/*'
+            },
+            timeout: 60000, // 60 segundos de timeout
+            maxRedirects: 5
+        });
 
-    const writer = fs.createWriteStream(filePath);
-    response.data.pipe(writer);
+        const contentType = response.headers['content-type'] || '';
+        console.log(`[DOWNLOAD] Content-Type: ${contentType}`);
 
-    return new Promise((resolve, reject) => {
-        writer.on('finish', () => {
-            const stats = fs.statSync(filePath);
-            console.log(`Download concluído: ${name} (${stats.size} bytes)`);
-            if (stats.size === 0) {
-                reject(new Error(`Arquivo ${name} baixado com 0 bytes.`));
-            }
-            resolve(name);
+        if (contentType.includes('text/html')) {
+            throw new Error(`A URL fornecida retornou uma página HTML em vez de um arquivo de mídia. Certifique-se de que é um link DIRETO para o vídeo/áudio.`);
+        }
+
+        const writer = fs.createWriteStream(filePath);
+        response.data.pipe(writer);
+
+        return new Promise((resolve, reject) => {
+            writer.on('finish', () => {
+                const stats = fs.statSync(filePath);
+                console.log(`[DOWNLOAD] Sucesso: ${name} (${stats.size} bytes)`);
+                if (stats.size < 1000) {
+                    fs.unlinkSync(filePath);
+                    reject(new Error(`O arquivo baixado é muito pequeno (${stats.size} bytes). Provavelmente o link expirou ou foi bloqueado.`));
+                }
+                resolve(name);
+            });
+            writer.on('error', (err) => {
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                reject(err);
+            });
         });
-        writer.on('error', (err) => {
-            console.error(`Erro no stream de escrita para ${name}:`, err);
-            reject(err);
-        });
-        response.data.on('error', (err) => {
-            console.error(`Erro no stream de resposta para ${name}:`, err);
-            reject(err);
-        });
-    });
+    } catch (error) {
+        console.error(`[DOWNLOAD] Falha: ${url} -> ${error.message}`);
+        throw error;
+    }
 }
 
 app.post('/render', async (req, res) => {
@@ -56,16 +70,14 @@ app.post('/render', async (req, res) => {
     let narrationFile = '';
 
     try {
-        console.log('--- Novo Pedido de Renderização ---');
+        console.log('--- Início da Renderização ---');
         
-        // Downloads em paralelo para maior velocidade, mas garantindo a integridade
-        [videoFile, audioFile, narrationFile] = await Promise.all([
-            downloadMedia(videoUrl, `input-v-${Date.now()}.mp4`),
-            downloadMedia(backgroundMusicUrl, `input-a-${Date.now()}.mp3`),
-            downloadMedia(narrationUrl, `input-n-${Date.now()}.mp3`)
-        ]);
+        // Baixando um por um para isolar erros
+        if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}.mp4`);
+        if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}.mp3`);
+        if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}.mp3`);
 
-        console.log('Todos os assets preparados. Gerando bundle Remotion...');
+        console.log('Arquivos locais prontos. Criando bundle...');
 
         const bundleLocation = await bundle({
             entryPoint: path.resolve('./src/index.ts'),
@@ -73,55 +85,57 @@ app.post('/render', async (req, res) => {
 
         const inputProps = { 
             videoUrl: videoFile, 
-            title, 
+            title: title || "Sem título", 
             backgroundMusicUrl: audioFile,
-            narrationUrl: narrationFile
+            narrationUrl: narrationFile,
+            isImage: videoUrl && videoUrl.toLowerCase().match(/\.(jpg|jpeg|png|webp|avif)/) !== null
         };
 
-        console.log(`Selecionando composição: ${compositionId}`);
+        console.log(`Configurando Composição: ${compositionId}`);
         const composition = await selectComposition({
             serveUrl: bundleLocation,
             id: compositionId,
             inputProps,
         });
 
-        const outputName = `final-${Date.now()}.mp4`;
+        const outputName = `render-${Date.now()}.mp4`;
         const outputLocation = path.resolve(outputName);
 
-        console.log('Renderizando vídeo...');
+        console.log('Executando Renderização FFmpeg...');
         await renderMedia({
             composition,
             serveUrl: bundleLocation,
             codec: 'h264',
             outputLocation: outputLocation,
             inputProps,
+            onProgress: ({ progress }) => {
+                console.log(`Progresso: ${(progress * 100).toFixed(0)}%`);
+            }
         });
 
-        // Limpeza de Inputs
-        [videoFile, audioFile, narrationFile].forEach(file => {
-            if (file) {
-                const p = path.join(publicPath, file);
+        // Limpeza
+        [videoFile, audioFile, narrationFile].forEach(f => {
+            if (f) {
+                const p = path.join(publicPath, f);
                 if (fs.existsSync(p)) fs.unlinkSync(p);
             }
         });
-        console.log('Assets temporários removidos.');
 
-        // Limpeza de Output em 10 minutos
         setTimeout(() => {
             if (fs.existsSync(outputLocation)) fs.unlinkSync(outputLocation);
         }, 10 * 60 * 1000);
 
-        console.log('Sucesso!');
+        console.log('Renderização Finalizada.');
         res.send({ 
-            message: 'Renderizado!', 
+            success: true, 
             url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputName}` 
         });
 
     } catch (error) {
-        console.error('ERRO NO PROCESSO:', error);
+        console.error('ERRO CRÍTICO NO SERVER:', error.message);
         res.status(500).send({ 
-            error: error.message, 
-            details: "Erro durante o processamento de mídia. Verifique se as URLs são válidas."
+            error: error.message,
+            tip: "Verifique se o link do vídeo é um link direto (termina em .mp4 ou similar) e não um link de página web."
         });
     }
 });
@@ -129,4 +143,4 @@ app.post('/render', async (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Servidor operacional na porta ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory na porta ${PORT}`));
