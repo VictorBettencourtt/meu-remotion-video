@@ -24,11 +24,11 @@ export const MyShort: React.FC<{
   const rotateY = interpolate(frame, [0, durationInFrames], [-5, 5]);
   const zoom = interpolate(frame, [0, durationInFrames], [1, 1.15]);
 
-  // MOVIMENTO COM INÉRCIA (SCROLL) - Easing de alta qualidade para preencher a tela sem gaps
+  // MOVIMENTO COM INÉRCIA (SCROLL)
   const translateY = interpolate(
     frame,
     [0, durationInFrames],
-    [0, -500], // Aumentado para cobrir conteúdos maiores em 60s
+    [0, -500],
     {
       easing: Easing.bezier(0.33, 1, 0.68, 1),
       extrapolateRight: 'clamp',
@@ -40,10 +40,10 @@ export const MyShort: React.FC<{
   return (
     <AbsoluteFill style={{ backgroundColor: 'black', fontFamily: 'system-ui' }}>
       
-      {/* PROFUNDIDADE VISUAL: FUNDO AMBIENTE DARK */}
+      {/* FUNDO COM BLUR - Otimizado para performance */}
       <AbsoluteFill style={{ 
-        filter: 'blur(60px) brightness(0.15)', 
-        transform: 'scale(1.4)',
+        filter: 'blur(20px) brightness(0.2)', 
+        transform: 'scale(1.2)',
         zIndex: 0
       }}>
         {isImage ? (
@@ -53,35 +53,42 @@ export const MyShort: React.FC<{
         )}
       </AbsoluteFill>
 
-      {/* CONTAINER DE MÍDIA PRINCIPAL - TELA CHEIA SEM GAPS */}
+      {/* CONTAINER CENTRALIZADO */}
       <AbsoluteFill style={{ 
         justifyContent: 'center', 
         alignItems: 'center', 
-        perspective: '1000px',
         zIndex: 1
       }}>
         <div style={{
-          width: '100%',
-          height: '100%',
+          width: '92%',
+          height: '80%',
+          borderRadius: '40px',
+          border: '4px solid white',
           overflow: 'hidden',
-          transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${zoom})`,
-          backgroundColor: '#000',
+          position: 'relative',
+          boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
         }}>
           <div style={{
-            transform: isImage ? `translateY(${translateY}px)` : 'none',
             width: '100%',
-            height: isImage ? 'auto' : '100%',
+            height: '100%',
+            transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${zoom})`,
           }}>
-            {isImage ? (
-              <Img src={mediaSrc} style={{ width: '100%', objectFit: 'cover' }} />
-            ) : (
-              <OffthreadVideo src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
+            <div style={{
+              transform: isImage ? `translateY(${translateY}px)` : 'none',
+              width: '100%',
+              height: isImage ? 'auto' : '100%',
+            }}>
+              {isImage ? (
+                <Img src={mediaSrc} style={{ width: '100%', objectFit: 'cover' }} />
+              ) : (
+                <OffthreadVideo src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+            </div>
           </div>
         </div>
       </AbsoluteFill>
 
-      {/* TITULO HUD SUPREMO - POSICIONADO NO TOPO */}
+      {/* TÍTULO HUD SUPREMO - PILULA NO TOPO */}
       <div style={{
         position: 'absolute',
         top: 60,
@@ -91,39 +98,41 @@ export const MyShort: React.FC<{
         zIndex: 10
       }}>
         <div style={{
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          padding: '20px 50px',
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          padding: '15px 40px',
+          borderRadius: '100px',
           borderLeft: '12px solid #3b82f6',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
         }}>
           <span style={{
             color: '#000',
-            fontSize: '48px',
+            fontSize: '38px',
             fontWeight: '900',
             textTransform: 'uppercase',
-            letterSpacing: '2px'
+            letterSpacing: '1px'
           }}>
             {title}
           </span>
         </div>
       </div>
 
-      {/* LEGENDAS EM PORTUGUÊS - CENTRO/BAIXO */}
+      {/* LEGENDA DINÂMICA */}
       {captionText && (
         <div style={{
           position: 'absolute',
-          bottom: 150,
+          bottom: 120,
           width: '100%',
           textAlign: 'center',
-          padding: '0 80px',
+          padding: '0 60px',
           zIndex: 10
         }}>
           <p style={{
             color: 'white',
-            fontSize: '40px',
-            fontWeight: '700',
-            textShadow: '2px 2px 10px rgba(0,0,0,0.8)',
-            lineHeight: '1.4'
+            fontSize: '42px',
+            fontWeight: '800',
+            textShadow: '0 4px 10px rgba(0,0,0,0.9)',
+            lineHeight: '1.2',
+            margin: 0
           }}>
             {captionText}
           </p>
