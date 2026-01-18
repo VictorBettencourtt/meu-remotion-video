@@ -1,4 +1,4 @@
-import { AbsoluteFill, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img, OffthreadVideo } from 'remotion';
+import { AbsoluteFill, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img, OffthreadVideo, Easing } from 'remotion';
 import React from 'react';
 
 const getMediaSource = (src: string) => {
@@ -17,66 +17,120 @@ export const NateStyle: React.FC<{
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   
-  // MOVIMENTO NATE HERK: Zoom constante e deslocamento vertical agressivo
+  // PERSPECTIVA 3D DINÂMICA: Rotação suave estilo tablet flutuando
+  const rotateX = interpolate(frame, [0, durationInFrames], [5, -5]);
+  const rotateY = interpolate(frame, [0, durationInFrames], [-5, 5]);
   const zoom = interpolate(frame, [0, durationInFrames], [1.1, 1.3]);
-  const translateY = interpolate(frame, [0, durationInFrames], [0, -150]);
+
+  // MOVIMENTO COM INÉRCIA (SCROLL): Easing de alta qualidade para o scroll
+  const translateY = interpolate(
+    frame,
+    [0, durationInFrames],
+    [0, -400],
+    {
+      easing: Easing.bezier(0.33, 1, 0.68, 1),
+      extrapolateRight: 'clamp',
+    }
+  );
 
   const mediaSrc = getMediaSource(videoUrl);
-  
-  // Lógica de detecção de tipo baseada no nome do arquivo baixado
   const isVideo = videoUrl.toLowerCase().includes('.mp4') || videoUrl.toLowerCase().includes('.mov');
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000', fontFamily: 'system-ui' }}>
       
-      {/* FULLSCREEN MEDIA COM SCROLL E ZOOM - SEM GAPS */}
+      {/* BACKGROUND DARK PREMIUM COM BLUR */}
       <AbsoluteFill style={{ 
-        transform: `translateY(${translateY}px) scale(${zoom})`,
-        zIndex: 1
+        filter: 'blur(60px) brightness(0.15)', 
+        transform: 'scale(1.4)',
+        zIndex: 0
       }}>
         {isVideo ? (
-          <OffthreadVideo 
-            src={mediaSrc} 
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-          />
+          <OffthreadVideo src={mediaSrc} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          <Img 
-            src={mediaSrc} 
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-          />
+          <Img src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
       </AbsoluteFill>
 
-      {/* VINHETA PREMIUM (GRADIENTE TOPO E BASE PARA PROFUNDIDADE) */}
+      {/* CONTAINER DE PERSPECTIVA 3D (O SEGREDO DO NATE HERK) */}
       <AbsoluteFill style={{ 
-        background: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.9) 100%)',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        perspective: '1200px', // Profundidade Z
+        zIndex: 1
+      }}>
+        <div style={{
+          width: '90%',
+          height: '80%',
+          borderRadius: '30px',
+          border: '2px solid rgba(255,255,255,0.2)',
+          boxShadow: '0 80px 150px rgba(0,0,0,0.9)',
+          backgroundColor: '#000', // Sem gaps brancos
+          overflow: 'hidden',
+          position: 'relative',
+          transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1)`
+        }}>
+          <div style={{
+            transform: `translateY(${translateY}px) scale(${zoom})`,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'flex-start'
+          }}>
+            {isVideo ? (
+              <OffthreadVideo src={mediaSrc} style={{ width: '100%', objectFit: 'cover' }} />
+            ) : (
+              <Img src={mediaSrc} style={{ width: '100%', objectFit: 'cover' }} />
+            )}
+          </div>
+
+          {/* SCANNER LINE (DETALHE TECH) */}
+          <div style={{
+             position: 'absolute',
+             top: '50%',
+             width: '100%',
+             height: '2px',
+             background: 'linear-gradient(90deg, transparent, #3b82f6, transparent)',
+             boxShadow: '0 0 25px rgba(59,130,246,0.8)',
+             zIndex: 10
+          }} />
+        </div>
+      </AbsoluteFill>
+
+      {/* VINHETA CINEMÁTICA */}
+      <AbsoluteFill style={{ 
+        background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.8) 100%)',
+        pointerEvents: 'none',
         zIndex: 2 
       }} />
 
-      {/* TÍTULO GLASSMORPHISM PILL - HUD PREMIUM */}
+      {/* TÍTULO GLASSMORPHISM PREMIUM BADGE */}
       <div style={{
         position: 'absolute', 
-        top: 80, 
+        top: 60, 
         width: '100%', 
         display: 'flex',
         justifyContent: 'center',
         zIndex: 10
       }}>
         <div style={{
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(15px)',
-          WebkitBackdropFilter: 'blur(15px)',
-          color: 'white',
-          fontSize: '32px',
-          fontWeight: '900',
-          padding: '15px 50px',
-          borderRadius: '100px',
-          textTransform: 'uppercase',
-          letterSpacing: '1px',
-          border: '1px solid rgba(255,255,255,0.15)',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          padding: '12px 45px',
+          borderRadius: '20px',
+          borderLeft: '10px solid #3b82f6',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
         }}>
-          {title}
+          <span style={{
+            color: '#000',
+            fontSize: '32px',
+            fontWeight: '900',
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
+          }}>
+            {title}
+          </span>
         </div>
       </div>
 
