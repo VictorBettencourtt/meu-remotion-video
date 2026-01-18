@@ -22,6 +22,10 @@ export const NateStyle: React.FC<{
   const rotateY = interpolate(frame, [0, durationInFrames], [-5, 5]);
   const zoom = interpolate(frame, [0, durationInFrames], [1.1, 1.3]);
 
+  // ANIMAÇÃO DE RESPIRAÇÃO PARA A AURORA
+  const auroraMoveX = interpolate(Math.sin(frame / 60), [-1, 1], [-20, 20]);
+  const auroraMoveY = interpolate(Math.cos(frame / 60), [-1, 1], [-15, 15]);
+
   // MOVIMENTO COM INÉRCIA (SCROLL)
   const translateY = interpolate(
     frame,
@@ -40,13 +44,59 @@ export const NateStyle: React.FC<{
   const isVideo = videoUrl.toLowerCase().includes('.mp4') || videoUrl.toLowerCase().includes('.mov');
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#000', fontFamily: 'system-ui' }}>
+    <AbsoluteFill style={{ backgroundColor: '#020617', fontFamily: 'system-ui' }}>
       
-      {/* BACKGROUND DARK PREMIUM COM BLUR */}
+      {/* AURORA TECH EFFECT */}
+      <AbsoluteFill style={{ overflow: 'hidden', zIndex: 0 }}>
+        {/* Blue - Top Right */}
+        <div style={{
+          position: 'absolute',
+          top: '-10%',
+          right: '-10%',
+          width: '70%',
+          height: '70%',
+          borderRadius: '50%',
+          backgroundColor: '#3b82f6',
+          filter: 'blur(120px)',
+          opacity: 0.3,
+          transform: `translate(${auroraMoveX}px, ${auroraMoveY}px)`
+        }} />
+        
+        {/* Purple - Bottom Left */}
+        <div style={{
+          position: 'absolute',
+          bottom: '-10%',
+          left: '-10%',
+          width: '70%',
+          height: '70%',
+          borderRadius: '50%',
+          backgroundColor: '#8b5cf6',
+          filter: 'blur(120px)',
+          opacity: 0.25,
+          transform: `translate(${-auroraMoveX}px, ${-auroraMoveY}px)`
+        }} />
+
+        {/* Neon Yellow - Center */}
+        <div style={{
+          position: 'absolute',
+          top: '25%',
+          left: '25%',
+          width: '50%',
+          height: '50%',
+          borderRadius: '50%',
+          backgroundColor: '#faff00',
+          filter: 'blur(120px)',
+          opacity: 0.1,
+          transform: `translate(${auroraMoveY}px, ${auroraMoveX}px)`
+        }} />
+      </AbsoluteFill>
+
+      {/* BACKGROUND REFLECTION COM BLUR (SUTIL) */}
       <AbsoluteFill style={{ 
-        filter: 'blur(60px) brightness(0.15)', 
-        transform: 'scale(1.4)',
-        zIndex: 0
+        filter: 'blur(100px) brightness(0.2)', 
+        transform: 'scale(1.5)',
+        zIndex: 1,
+        opacity: 0.3
       }}>
         {isVideo ? (
           <OffthreadVideo src={mediaSrc} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -60,14 +110,14 @@ export const NateStyle: React.FC<{
         justifyContent: 'center', 
         alignItems: 'center', 
         perspective: '1200px',
-        zIndex: 1
+        zIndex: 2
       }}>
         <div style={{
           width: '90%',
           height: '80%',
           borderRadius: '30px',
           border: '1px solid rgba(59,130,246,0.3)',
-          boxShadow: '0 80px 150px rgba(0,0,0,0.9)',
+          boxShadow: '0 80px 150px rgba(0,0,0,0.8), 0 0 40px rgba(59,130,246,0.1)',
           backgroundColor: '#000',
           overflow: 'hidden',
           position: 'relative',
@@ -91,9 +141,9 @@ export const NateStyle: React.FC<{
 
       {/* VINHETA CINEMÁTICA */}
       <AbsoluteFill style={{ 
-        background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.8) 100%)',
+        background: 'linear-gradient(180deg, rgba(2,6,23,0.7) 0%, transparent 30%, transparent 70%, rgba(2,6,23,0.7) 100%)',
         pointerEvents: 'none',
-        zIndex: 2 
+        zIndex: 3 
       }} />
 
       {/* TÍTULO HUD FUTURISTA */}
@@ -107,7 +157,7 @@ export const NateStyle: React.FC<{
         opacity: glitchOpacity
       }}>
         <div style={{
-          background: 'rgba(0,0,0,0.6)',
+          background: 'rgba(2,6,23,0.6)',
           backdropFilter: 'blur(10px)',
           padding: '15px 50px',
           border: '1px solid #3b82f6',
