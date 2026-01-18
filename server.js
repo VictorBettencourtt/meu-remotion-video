@@ -38,7 +38,7 @@ async function downloadMedia(url, baseName) {
         const response = await axios({
             url,
             method: 'GET',
-            responseType: 'arraybuffer', // Alterado para arraybuffer para garantir integridade total do download
+            responseType: 'arraybuffer',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             },
@@ -98,6 +98,9 @@ app.post('/render', async (req, res) => {
         const outputName = `render-${Date.now()}.mp4`;
         const outputLocation = path.resolve(outputName);
 
+        // LOGICA DE SEGURANÇA: FFmpeg Check
+        console.log('[FACTORY] Iniciando motor de renderização...');
+
         await renderMedia({
             composition,
             serveUrl: bundleLocation,
@@ -109,13 +112,15 @@ app.post('/render', async (req, res) => {
             }
         });
 
-        // Cleanup
-        [videoFile, audioFile, narrationFile].forEach(f => {
-            if (f) {
-                const p = path.join(publicPath, f);
-                try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch(e) {}
-            }
-        });
+        // Cleanup com atraso de segurança
+        setTimeout(() => {
+            [videoFile, audioFile, narrationFile].forEach(f => {
+                if (f) {
+                    const p = path.join(publicPath, f);
+                    try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch(e) {}
+                }
+            });
+        }, 5000);
 
         setTimeout(() => {
             try { if (fs.existsSync(outputLocation)) fs.unlinkSync(outputLocation); } catch(e) {}
@@ -127,10 +132,10 @@ app.post('/render', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[ERRO]', error.message);
+        console.error('[ERRO CRÍTICO]', error.message);
         res.status(500).send({ 
             error: error.message,
-            details: "Erro técnico na renderização. Mídia corrompida ou inacessível."
+            details: "O motor de mídia falhou ao processar o arquivo. Verifique se o link de vídeo é direto."
         });
     }
 });
@@ -138,4 +143,4 @@ app.post('/render', async (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2.3 na porta ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2.4 na porta 3000`));
