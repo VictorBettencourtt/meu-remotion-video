@@ -12,11 +12,21 @@ app.use('/outputs', express.static(path.resolve('./')));
 const publicPath = path.resolve('./public');
 if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath);
 
-async function downloadMedia(url, name) {
+async function downloadMedia(url, baseName) {
     if (!url || url === "" || url === "N/A") return "";
-    const filePath = path.join(publicPath, name);
     
-    console.log(`[DOWNLOAD] Tentando: ${url}`);
+    // Tenta detectar a extensão correta da URL ou Content-Type
+    let extension = path.extname(url).split('?')[0] || '';
+    if (!extension) {
+        if (baseName.includes('v-')) extension = '.mp4';
+        if (baseName.includes('a-')) extension = '.mp3';
+        if (baseName.includes('n-')) extension = '.mp3';
+    }
+    
+    const fileName = `${baseName}${extension}`;
+    const filePath = path.join(publicPath, fileName);
+    
+    console.log(`[FACTORY] Baixando: ${url} -> ${fileName}`);
     
     try {
         const response = await axios({
@@ -25,31 +35,28 @@ async function downloadMedia(url, name) {
             responseType: 'stream',
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'video/*,audio/*,image/*,*/*'
             },
-            timeout: 60000, // 60 segundos de timeout
-            maxRedirects: 5
+            timeout: 60000,
         });
 
-        const contentType = response.headers['content-type'] || '';
-        console.log(`[DOWNLOAD] Content-Type: ${contentType}`);
-
-        if (contentType.includes('text/html')) {
-            throw new Error(`A URL fornecida retornou uma página HTML em vez de um arquivo de mídia. Certifique-se de que é um link DIRETO para o vídeo/áudio.`);
-        }
-
+        const totalSize = parseInt(response.headers['content-length'], 10);
         const writer = fs.createWriteStream(filePath);
         response.data.pipe(writer);
 
         return new Promise((resolve, reject) => {
             writer.on('finish', () => {
                 const stats = fs.statSync(filePath);
-                console.log(`[DOWNLOAD] Sucesso: ${name} (${stats.size} bytes)`);
+                console.log(`[FACTORY] Finalizado: ${fileName} (${stats.size} bytes)`);
+                
+                if (!isNaN(totalSize) && stats.size !== totalSize) {
+                    console.warn(`[FACTORY] Aviso: Tamanho do arquivo (${stats.size}) difere do Content-Length (${totalSize})`);
+                }
+
                 if (stats.size < 1000) {
                     fs.unlinkSync(filePath);
-                    reject(new Error(`O arquivo baixado é muito pequeno (${stats.size} bytes). Provavelmente o link expirou ou foi bloqueado.`));
+                    reject(new Error(`Arquivo corrompido ou incompleto: ${fileName}`));
                 }
-                resolve(name);
+                resolve(fileName);
             });
             writer.on('error', (err) => {
                 if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -57,7 +64,7 @@ async function downloadMedia(url, name) {
             });
         });
     } catch (error) {
-        console.error(`[DOWNLOAD] Falha: ${url} -> ${error.message}`);
+        console.error(`[FACTORY] Erro no download: ${error.message}`);
         throw error;
     }
 }
@@ -70,14 +77,12 @@ app.post('/render', async (req, res) => {
     let narrationFile = '';
 
     try {
-        console.log('--- Início da Renderização ---');
+        console.log(`--- Iniciando Renderização: ${compositionId} ---`);
         
-        // Baixando um por um para isolar erros
-        if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}.mp4`);
-        if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}.mp3`);
-        if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}.mp3`);
-
-        console.log('Arquivos locais prontos. Criando bundle...');
+        // Download com detecção de extensão
+        if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}`);
+        if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}`);
+        if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}`);
 
         const bundleLocation = await bundle({
             entryPoint: path.resolve('./src/index.ts'),
@@ -88,20 +93,21 @@ app.post('/render', async (req, res) => {
             title: title || "Sem título", 
             backgroundMusicUrl: audioFile,
             narrationUrl: narrationFile,
-            isImage: videoUrl && videoUrl.toLowerCase().match(/\.(jpg|jpeg|png|webp|avif)/) !== null
+            // Se for NateStyle ou a extensão for de imagem, isImage = true
+            isImage: compositionId === 'NateStyle' || (videoFile && videoFile.match(/\.(jpg|jpeg|png|webp|avif)/i) !== null)
         };
 
-        console.log(`Configurando Composição: ${compositionId}`);
+        console.log(`[FACTORY] Props: isImage=${inputProps.isImage}, video=${videoFile}`);
+
         const composition = await selectComposition({
             serveUrl: bundleLocation,
             id: compositionId,
             inputProps,
         });
 
-        const outputName = `render-${Date.now()}.mp4`;
+        const outputName = `final-${Date.now()}.mp4`;
         const outputLocation = path.resolve(outputName);
 
-        console.log('Executando Renderização FFmpeg...');
         await renderMedia({
             composition,
             serveUrl: bundleLocation,
@@ -109,11 +115,11 @@ app.post('/render', async (req, res) => {
             outputLocation: outputLocation,
             inputProps,
             onProgress: ({ progress }) => {
-                console.log(`Progresso: ${(progress * 100).toFixed(0)}%`);
+                console.log(`Render: ${(progress * 100).toFixed(0)}%`);
             }
         });
 
-        // Limpeza
+        // Cleanup inputs
         [videoFile, audioFile, narrationFile].forEach(f => {
             if (f) {
                 const p = path.join(publicPath, f);
@@ -125,17 +131,16 @@ app.post('/render', async (req, res) => {
             if (fs.existsSync(outputLocation)) fs.unlinkSync(outputLocation);
         }, 10 * 60 * 1000);
 
-        console.log('Renderização Finalizada.');
         res.send({ 
             success: true, 
             url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputName}` 
         });
 
     } catch (error) {
-        console.error('ERRO CRÍTICO NO SERVER:', error.message);
+        console.error('[ERRO]', error.message);
         res.status(500).send({ 
             error: error.message,
-            tip: "Verifique se o link do vídeo é um link direto (termina em .mp4 ou similar) e não um link de página web."
+            details: "Erro técnico na renderização. Verifique se os links de mídia são válidos e públicos."
         });
     }
 });
@@ -143,4 +148,4 @@ app.post('/render', async (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory na porta ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2 na porta ${PORT}`));
