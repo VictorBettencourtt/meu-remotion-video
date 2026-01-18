@@ -38,35 +38,26 @@ async function downloadMedia(url, baseName) {
         const response = await axios({
             url,
             method: 'GET',
-            responseType: 'stream',
+            responseType: 'arraybuffer', // Alterado para arraybuffer para garantir integridade total do download
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             },
             timeout: 60000,
         });
 
-        const writer = fs.createWriteStream(filePath);
-        response.data.pipe(writer);
-
-        return new Promise((resolve, reject) => {
-            writer.on('finish', () => {
-                const stats = fs.statSync(filePath);
-                console.log(`[FACTORY] Finalizado: ${fileName} (${stats.size} bytes)`);
-                
-                if (stats.size < 1000) {
-                    try { fs.unlinkSync(filePath); } catch(e) {}
-                    reject(new Error(`Arquivo corrompido ou incompleto: ${fileName}`));
-                    return;
-                }
-                resolve(fileName);
-            });
-            writer.on('error', (err) => {
-                try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch(e) {}
-                reject(err);
-            });
-        });
+        fs.writeFileSync(filePath, Buffer.from(response.data));
+        
+        const stats = fs.statSync(filePath);
+        console.log(`[FACTORY] Finalizado: ${fileName} (${stats.size} bytes)`);
+        
+        if (stats.size < 1000) {
+            try { fs.unlinkSync(filePath); } catch(e) {}
+            throw new Error(`Arquivo corrompido ou incompleto: ${fileName}`);
+        }
+        return fileName;
     } catch (error) {
         console.error(`[FACTORY] Erro no download: ${error.message}`);
+        if (fs.existsSync(filePath)) try { fs.unlinkSync(filePath); } catch(e) {}
         throw error;
     }
 }
@@ -81,7 +72,7 @@ app.post('/render', async (req, res) => {
     try {
         console.log(`--- Iniciando Renderização: ${compositionId} ---`);
         
-        // Download sequencial para evitar race conditions em I/O limitados
+        // Download sequencial garantido com escrita síncrona
         if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}`);
         if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}`);
         if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}`);
@@ -118,7 +109,7 @@ app.post('/render', async (req, res) => {
             }
         });
 
-        // Cleanup com proteção
+        // Cleanup
         [videoFile, audioFile, narrationFile].forEach(f => {
             if (f) {
                 const p = path.join(publicPath, f);
@@ -139,7 +130,7 @@ app.post('/render', async (req, res) => {
         console.error('[ERRO]', error.message);
         res.status(500).send({ 
             error: error.message,
-            details: "Erro técnico na renderização. Filenames longos ou mídia corrompida."
+            details: "Erro técnico na renderização. Mídia corrompida ou inacessível."
         });
     }
 });
@@ -147,4 +138,4 @@ app.post('/render', async (req, res) => {
 app.get('/health', (req, res) => res.send('OK'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2.2 na porta ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Remotion Factory v2.3 na porta ${PORT}`));
