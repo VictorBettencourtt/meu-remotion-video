@@ -89,7 +89,7 @@ async function downloadMedia(url, baseName) {
 }
 
 app.post('/render', async (req, res) => {
-    const { videoUrl, title, backgroundMusicUrl, narrationUrl, compositionId = 'MasterShort' } = req.body;
+    const { videoUrl, title, backgroundMusicUrl, narrationUrl, compositionId = 'MasterShort', durationInFrames } = req.body;
     
     let videoFile = '';
     let audioFile = '';
@@ -120,6 +120,7 @@ app.post('/render', async (req, res) => {
             serveUrl: bundleLocation,
             id: compositionId,
             inputProps,
+            durationInFrames: durationInFrames ? parseInt(durationInFrames) : undefined,
         });
 
         const outputName = `render-${Date.now()}.mp4`;
