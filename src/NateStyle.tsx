@@ -1,4 +1,4 @@
-import { AbsoluteFill, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img, OffthreadVideo, Easing } from 'remotion';
+import { AbsoluteFill, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img, OffthreadVideo, Easing, random } from 'remotion';
 import React from 'react';
 
 const getMediaSource = (src: string) => {
@@ -17,12 +17,12 @@ export const NateStyle: React.FC<{
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   
-  // PERSPECTIVA 3D DINÂMICA: Rotação suave estilo tablet flutuando
+  // PERSPECTIVA 3D DINÂMICA
   const rotateX = interpolate(frame, [0, durationInFrames], [5, -5]);
   const rotateY = interpolate(frame, [0, durationInFrames], [-5, 5]);
   const zoom = interpolate(frame, [0, durationInFrames], [1.1, 1.3]);
 
-  // MOVIMENTO COM INÉRCIA (SCROLL): Easing de alta qualidade para o scroll
+  // MOVIMENTO COM INÉRCIA (SCROLL)
   const translateY = interpolate(
     frame,
     [0, durationInFrames],
@@ -32,6 +32,9 @@ export const NateStyle: React.FC<{
       extrapolateRight: 'clamp',
     }
   );
+
+  // ANIMAÇÃO DE GLITCH (PRIMEIRO SEGUNDO)
+  const glitchOpacity = frame < 30 ? (random(frame) > 0.8 ? 0.2 : 1) : 1;
 
   const mediaSrc = getMediaSource(videoUrl);
   const isVideo = videoUrl.toLowerCase().includes('.mp4') || videoUrl.toLowerCase().includes('.mov');
@@ -52,91 +55,10 @@ export const NateStyle: React.FC<{
         )}
       </AbsoluteFill>
 
-      {/* CONTAINER DE PERSPECTIVA 3D (O SEGREDO DO NATE HERK) */}
+      {/* CONTAINER DE PERSPECTIVA 3D */}
       <AbsoluteFill style={{ 
         justifyContent: 'center', 
         alignItems: 'center', 
-        perspective: '1200px', // Profundidade Z
+        perspective: '1200px',
         zIndex: 1
-      }}>
-        <div style={{
-          width: '90%',
-          height: '80%',
-          borderRadius: '30px',
-          border: '2px solid rgba(255,255,255,0.2)',
-          boxShadow: '0 80px 150px rgba(0,0,0,0.9)',
-          backgroundColor: '#000', // Sem gaps brancos
-          overflow: 'hidden',
-          position: 'relative',
-          transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1)`
-        }}>
-          <div style={{
-            transform: `translateY(${translateY}px) scale(${zoom})`,
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'flex-start'
-          }}>
-            {isVideo ? (
-              <OffthreadVideo src={mediaSrc} style={{ width: '100%', objectFit: 'cover' }} />
-            ) : (
-              <Img src={mediaSrc} style={{ width: '100%', objectFit: 'cover' }} />
-            )}
-          </div>
-
-          {/* SCANNER LINE (DETALHE TECH) */}
-          <div style={{
-             position: 'absolute',
-             top: '50%',
-             width: '100%',
-             height: '2px',
-             background: 'linear-gradient(90deg, transparent, #3b82f6, transparent)',
-             boxShadow: '0 0 25px rgba(59,130,246,0.8)',
-             zIndex: 10
-          }} />
-        </div>
-      </AbsoluteFill>
-
-      {/* VINHETA CINEMÁTICA */}
-      <AbsoluteFill style={{ 
-        background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.8) 100%)',
-        pointerEvents: 'none',
-        zIndex: 2 
-      }} />
-
-      {/* TÍTULO GLASSMORPHISM PREMIUM BADGE */}
-      <div style={{
-        position: 'absolute', 
-        top: 60, 
-        width: '100%', 
-        display: 'flex',
-        justifyContent: 'center',
-        zIndex: 10
-      }}>
-        <div style={{
-          background: 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          padding: '12px 45px',
-          borderRadius: '20px',
-          borderLeft: '10px solid #3b82f6',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
-        }}>
-          <span style={{
-            color: '#000',
-            fontSize: '32px',
-            fontWeight: '900',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}>
-            {title}
-          </span>
-        </div>
-      </div>
-
-      {/* AUDIO ENGINE */}
-      {backgroundMusicUrl && <Audio src={getMediaSource(backgroundMusicUrl)} volume={0.1} />}
-      {narrationUrl && <Audio src={getMediaSource(narrationUrl)} volume={1.0} />}
-    </AbsoluteFill>
-  );
-};
+      }}>\n        <div style={{\n          width: '90%',\n          height: '80%',\n          borderRadius: '30px',\n          border: '1px solid rgba(59,130,246,0.3)',\n          boxShadow: '0 80px 150px rgba(0,0,0,0.9)',\n          backgroundColor: '#000',\n          overflow: 'hidden',\n          position: 'relative',\n          transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1)`\n        }}>\n          <div style={{\n            transform: `translateY(${translateY}px) scale(${zoom})`,\n            width: '100%',\n            height: '100%',\n            display: 'flex',\n            alignItems: 'flex-start'\n          }}>\n            {isVideo ? (\n              <OffthreadVideo src={mediaSrc} style={{ width: '100%', objectFit: 'cover' }} />\n            ) : (\n              <Img src={mediaSrc} style={{ width: '100%', objectFit: 'cover' }} />\n            )}\n          </div>\n        </div>\n      </AbsoluteFill>\n\n      {/* VINHETA CINEMÁTICA */}\n      <AbsoluteFill style={{ \n        background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.8) 100%)',\n        pointerEvents: 'none',\n        zIndex: 2 \n      }} />\n\n      {/* TÍTULO HUD FUTURISTA */}\n      <div style={{\n        position: 'absolute', \n        top: 60, \n        width: '100%', \n        display: 'flex',\n        justifyContent: 'center',\n        zIndex: 10,\n        opacity: glitchOpacity\n      }}>\n        <div style={{\n          background: 'rgba(0,0,0,0.6)',\n          backdropFilter: 'blur(10px)',\n          padding: '15px 50px',\n          border: '1px solid #3b82f6',\n          position: 'relative',\n          boxShadow: '0 0 30px rgba(59,130,246,0.2)',\n        }}>\n          \n          {/* CANTO VIVO ESQUERDO (BRACKET) */}\n          <div style={{\n            position: 'absolute',\n            top: -2,\n            left: -2,\n            width: '15px',\n            height: '15px',\n            borderTop: '3px solid #3b82f6',\n            borderLeft: '3px solid #3b82f6'\n          }} />\n\n          {/* CANTO VIVO DIREITO (BRACKET) */}\n          <div style={{\n            position: 'absolute',\n            top: -2,\n            right: -2,\n            width: '15px',\n            height: '15px',\n            borderTop: '3px solid #3b82f6',\n            borderRight: '3px solid #3b82f6'\n          }} />\n\n          <span style={{\n            color: '#fff',\n            fontSize: '28px',\n            fontWeight: '900',\n            textTransform: 'uppercase',\n            letterSpacing: '2px',\n            textShadow: '0 0 10px rgba(59,130,246,0.5)'\n          }}>\n            {title}\n          </span>\n        </div>\n      </div>\n\n      {/* AUDIO ENGINE */}\n      {backgroundMusicUrl && <Audio src={getMediaSource(backgroundMusicUrl)} volume={0.1} />}\n      {narrationUrl && <Audio src={getMediaSource(narrationUrl)} volume={1.0} />}\n    </AbsoluteFill>\n  );\n};
