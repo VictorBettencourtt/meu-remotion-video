@@ -91,14 +91,18 @@ export const RemotionRoot: React.FC = () => {
           title: z.string(),
           backgroundMusicUrl: z.string(),
           narrationUrl: z.string().optional(),
+          captionText: z.string().optional(),
           isImage: z.boolean().optional(),
+          durationInFrames: z.number().optional(),
         })}
         defaultProps={{
           videoUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475",
           title: "DYNAMIC NATE",
           backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           narrationUrl: "",
+          captionText: "Legenda automática gerada por IA aparece aqui.",
           isImage: true,
+          durationInFrames: 450,
         }}
       />
     </>

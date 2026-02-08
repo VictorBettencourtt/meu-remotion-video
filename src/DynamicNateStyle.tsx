@@ -12,10 +12,13 @@ export const DynamicNateStyle: React.FC<{
     title: string;
     backgroundMusicUrl: string;
     narrationUrl?: string;
+    captionText?: string;
     isImage?: boolean;
-}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl }) => {
+    durationInFrames?: number;
+}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, captionText, durationInFrames: propDuration }) => {
     const frame = useCurrentFrame();
-    const { durationInFrames, width, height } = useVideoConfig();
+    const { durationInFrames: configDuration, width, height } = useVideoConfig();
+    const durationInFrames = propDuration || configDuration;
 
     // DETERMINE ASPECT RATIO
     const aspectRatio = width / height;
@@ -231,6 +234,38 @@ export const DynamicNateStyle: React.FC<{
                     </span>
                 </div>
             </div>
+
+            {/* CAPTIONS AREA */}
+            {captionText && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '10%',
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    opacity: frame > 20 ? 1 : 0 // Fade in slightly later
+                }}>
+                    <div style={{
+                        background: 'rgba(0,0,0,0.7)',
+                        backdropFilter: 'blur(5px)',
+                        padding: '10px 20px',
+                        borderRadius: '10px',
+                        maxWidth: '80%',
+                        textAlign: 'center'
+                    }}>
+                        <span style={{
+                            color: '#fbbf24', // Amber/Yellow for visibility
+                            fontSize: `${fontSize * 0.6}px`,
+                            fontWeight: '700',
+                            fontFamily: 'monospace', // Tech feel
+                            textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+                        }}>
+                            {captionText}
+                        </span>
+                    </div>
+                </div>
+            )}
 
             {/* AUDIO ENGINE */}
             {backgroundMusicUrl && <Audio src={getMediaSource(backgroundMusicUrl)} volume={0.1} />}
