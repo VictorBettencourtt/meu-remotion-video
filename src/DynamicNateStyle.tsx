@@ -70,7 +70,7 @@ export const DynamicNateStyle: React.FC<{
     return (
         <AbsoluteFill style={{ backgroundColor: '#020617', fontFamily: 'system-ui' }}>
 
-            {/* AURORA TECH EFFECT */}
+            {/* AURORA TECH EFFECT - OPTIMIZED */}
             <AbsoluteFill style={{ overflow: 'hidden', zIndex: 0 }}>
                 {/* Blue - Top Right */}
                 <div style={{
@@ -80,9 +80,7 @@ export const DynamicNateStyle: React.FC<{
                     width: '70%',
                     height: '70%',
                     borderRadius: '50%',
-                    backgroundColor: '#3b82f6',
-                    filter: 'blur(120px)',
-                    opacity: 0.3,
+                    background: 'radial-gradient(circle, rgba(59,130,246,0.4) 0%, rgba(0,0,0,0) 70%)',
                     transform: `translate(${auroraMoveX}px, ${auroraMoveY}px)`
                 }} />
 
@@ -94,9 +92,7 @@ export const DynamicNateStyle: React.FC<{
                     width: '70%',
                     height: '70%',
                     borderRadius: '50%',
-                    backgroundColor: '#8b5cf6',
-                    filter: 'blur(120px)',
-                    opacity: 0.25,
+                    background: 'radial-gradient(circle, rgba(139,92,246,0.3) 0%, rgba(0,0,0,0) 70%)',
                     transform: `translate(${-auroraMoveX}px, ${-auroraMoveY}px)`
                 }} />
 
@@ -108,19 +104,17 @@ export const DynamicNateStyle: React.FC<{
                     width: '50%',
                     height: '50%',
                     borderRadius: '50%',
-                    backgroundColor: '#faff00',
-                    filter: 'blur(120px)',
-                    opacity: 0.1,
+                    background: 'radial-gradient(circle, rgba(250,255,0,0.15) 0%, rgba(0,0,0,0) 70%)',
                     transform: `translate(${auroraMoveY}px, ${auroraMoveX}px)`
                 }} />
             </AbsoluteFill>
 
-            {/* BACKGROUND REFLECTION COM BLUR (SUTIL) */}
+            {/* BACKGROUND REFLECTION - OPTIMIZED */}
             <AbsoluteFill style={{
-                filter: 'blur(100px) brightness(0.2)',
-                transform: 'scale(1.5)',
                 zIndex: 1,
-                opacity: 0.3
+                opacity: 0.2,
+                transform: 'scale(1.2)', // Slightly smaller scale to save pixels
+                filter: 'brightness(0.3)' // Just darken, no blur
             }}>
                 {isVideo ? (
                     <OffthreadVideo src={mediaSrc} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -182,8 +176,7 @@ export const DynamicNateStyle: React.FC<{
                 opacity: glitchOpacity
             }}>
                 <div style={{
-                    background: 'rgba(2,6,23,0.6)',
-                    backdropFilter: 'blur(10px)',
+                    background: 'rgba(2,6,23,0.85)', // Higher opacity instead of blur
                     padding: `${fontSize * 0.5}px ${fontSize * 1.5}px`,
                     border: '1px solid #3b82f6',
                     position: 'relative',
@@ -240,8 +233,7 @@ export const DynamicNateStyle: React.FC<{
                     opacity: frame > 20 ? 1 : 0 // Fade in slightly later
                 }}>
                     <div style={{
-                        background: 'rgba(0,0,0,0.7)',
-                        backdropFilter: 'blur(5px)',
+                        background: 'rgba(0,0,0,0.85)', // Higher opacity instead of blur
                         padding: '10px 20px',
                         borderRadius: '10px',
                         maxWidth: '80%',
