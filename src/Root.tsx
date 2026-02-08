@@ -92,6 +92,11 @@ export const RemotionRoot: React.FC = () => {
           backgroundMusicUrl: z.string(),
           narrationUrl: z.string().optional(),
           captionText: z.string().optional(),
+          captions: z.array(z.object({
+            text: z.string(),
+            start: z.number(),
+            end: z.number(),
+          })).optional(),
           isImage: z.boolean().optional(),
           durationInFrames: z.number().optional(),
         })}
@@ -101,6 +106,10 @@ export const RemotionRoot: React.FC = () => {
           backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           narrationUrl: "",
           captionText: "Legenda automática gerada por IA aparece aqui.",
+          captions: [
+            { text: "Legenda dinâmica exemplo 1", start: 0, end: 2000 },
+            { text: "Legenda dinâmica exemplo 2", start: 2000, end: 4000 }
+          ],
           isImage: true,
           durationInFrames: 450,
         }}

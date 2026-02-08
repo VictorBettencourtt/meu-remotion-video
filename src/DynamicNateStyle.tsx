@@ -1,4 +1,4 @@
-import { AbsoluteFill, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img, OffthreadVideo, Easing, random } from 'remotion';
+import { AbsoluteFill, Audio, staticFile, interpolate, useCurrentFrame, useVideoConfig, Img, OffthreadVideo, random } from 'remotion';
 import React from 'react';
 
 const getMediaSource = (src: string) => {
@@ -13,12 +13,17 @@ export const DynamicNateStyle: React.FC<{
     backgroundMusicUrl: string;
     narrationUrl?: string;
     captionText?: string;
+    captions?: { text: string; start: number; end: number }[];
     isImage?: boolean;
     durationInFrames?: number;
-}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, captionText, durationInFrames: propDuration }) => {
+}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, captionText, captions, durationInFrames: propDuration }) => {
     const frame = useCurrentFrame();
-    const { durationInFrames: configDuration, width, height } = useVideoConfig();
+    const { durationInFrames: configDuration, width, height, fps } = useVideoConfig();
     const durationInFrames = propDuration || configDuration;
+
+    // CAPTION LOGIC
+    const currentTimeMs = (frame / fps) * 1000;
+    const currentCaption = captions?.find(c => currentTimeMs >= c.start && currentTimeMs <= c.end)?.text || captionText;
 
     // DETERMINE ASPECT RATIO
     const aspectRatio = width / height;
@@ -54,19 +59,7 @@ export const DynamicNateStyle: React.FC<{
     const auroraMoveX = interpolate(Math.sin(frame / 60), [-1, 1], [-20, 20]);
     const auroraMoveY = interpolate(Math.cos(frame / 60), [-1, 1], [-15, 15]);
 
-    // MOVIMENTO COM INÉRCIA (SCROLL)
-    // Adjust scroll distance based on height
-    const scrollDistance = height * 0.2;
 
-    const translateY = interpolate(
-        frame,
-        [0, durationInFrames],
-        [0, -scrollDistance],
-        {
-            easing: Easing.bezier(0.33, 1, 0.68, 1),
-            extrapolateRight: 'clamp',
-        }
-    );
 
     // ANIMAÇÃO DE GLITCH (PRIMEIRO SEGUNDO)
     const glitchOpacity = frame < 30 ? (random(frame) > 0.8 ? 0.2 : 1) : 1;
@@ -156,7 +149,7 @@ export const DynamicNateStyle: React.FC<{
                     transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1)`
                 }}>
                     <div style={{
-                        transform: `translateY(${translateY}px) scale(${zoom})`,
+                        transform: `scale(${zoom})`,
                         width: '100%',
                         height: '100%',
                         display: 'flex',
@@ -236,7 +229,7 @@ export const DynamicNateStyle: React.FC<{
             </div>
 
             {/* CAPTIONS AREA */}
-            {captionText && (
+            {currentCaption && (
                 <div style={{
                     position: 'absolute',
                     bottom: '10%',
@@ -261,7 +254,7 @@ export const DynamicNateStyle: React.FC<{
                             fontFamily: 'monospace', // Tech feel
                             textShadow: '0 2px 4px rgba(0,0,0,0.8)'
                         }}>
-                            {captionText}
+                            {currentCaption}
                         </span>
                     </div>
                 </div>
