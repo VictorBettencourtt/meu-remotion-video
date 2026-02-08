@@ -1,5 +1,6 @@
 import { MyShort } from './MeuShort';
 import { NateStyle } from './NateStyle';
+import { DynamicNateStyle } from './DynamicNateStyle';
 import { Composition } from "remotion";
 import { z } from "zod";
 
@@ -76,6 +77,28 @@ export const RemotionRoot: React.FC = () => {
           narrationUrl: "",
           captionText: "Este é um layout 16:9 automatizado com scanner lateral estilo Nate Herk.",
           isImage: false,
+        }}
+      />
+      <Composition
+        id="DynamicNateStyle"
+        component={DynamicNateStyle as any}
+        durationInFrames={450}
+        fps={30}
+        width={1080}
+        height={1920} // Default to vertical, but this will change based on user input during render
+        schema={z.object({
+          videoUrl: z.string(),
+          title: z.string(),
+          backgroundMusicUrl: z.string(),
+          narrationUrl: z.string().optional(),
+          isImage: z.boolean().optional(),
+        })}
+        defaultProps={{
+          videoUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475",
+          title: "DYNAMIC NATE",
+          backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+          narrationUrl: "",
+          isImage: true,
         }}
       />
     </>
