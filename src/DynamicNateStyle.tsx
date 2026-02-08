@@ -13,17 +13,27 @@ export const DynamicNateStyle: React.FC<{
     backgroundMusicUrl: string;
     narrationUrl?: string;
     captionText?: string;
+    caption?: string;
     captions?: { text: string; start: number; end: number }[];
     isImage?: boolean;
     durationInFrames?: number;
-}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, captionText, captions, durationInFrames: propDuration }) => {
+}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, captionText, caption, captions, durationInFrames: propDuration }) => {
     const frame = useCurrentFrame();
     const { durationInFrames: configDuration, width, height, fps } = useVideoConfig();
     const durationInFrames = propDuration || configDuration;
 
     // CAPTION LOGIC
+    let parsedCaptions = captions;
+    if (!parsedCaptions && caption) {
+        try {
+            parsedCaptions = JSON.parse(caption);
+        } catch (e) {
+            console.error("Failed to parse caption prop:", e);
+        }
+    }
+
     const currentTimeMs = (frame / fps) * 1000;
-    const currentCaption = captions?.find(c => currentTimeMs >= c.start && currentTimeMs <= c.end)?.text || captionText;
+    const currentCaption = parsedCaptions?.find(c => currentTimeMs >= c.start && currentTimeMs <= c.end)?.text || captionText;
 
     // DETERMINE ASPECT RATIO
     const aspectRatio = width / height;

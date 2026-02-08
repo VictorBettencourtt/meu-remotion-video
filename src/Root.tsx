@@ -92,6 +92,7 @@ export const RemotionRoot: React.FC = () => {
           backgroundMusicUrl: z.string(),
           narrationUrl: z.string().optional(),
           captionText: z.string().optional(),
+          caption: z.string().optional(),
           captions: z.array(z.object({
             text: z.string(),
             start: z.number(),
@@ -100,16 +101,17 @@ export const RemotionRoot: React.FC = () => {
           isImage: z.boolean().optional(),
           durationInFrames: z.number().optional(),
         })}
+        calculateMetadata={async ({ props }) => {
+          return {
+            durationInFrames: props.durationInFrames || 450,
+          };
+        }}
         defaultProps={{
           videoUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475",
           title: "DYNAMIC NATE",
           backgroundMusicUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
           narrationUrl: "",
           captionText: "Legenda automática gerada por IA aparece aqui.",
-          captions: [
-            { text: "Legenda dinâmica exemplo 1", start: 0, end: 2000 },
-            { text: "Legenda dinâmica exemplo 2", start: 2000, end: 4000 }
-          ],
           isImage: true,
           durationInFrames: 450,
         }}
