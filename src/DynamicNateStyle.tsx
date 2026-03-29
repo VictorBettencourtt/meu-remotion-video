@@ -245,7 +245,7 @@ export const DynamicNateStyle: React.FC<{
                     display: 'flex',
                     justifyContent: 'center',
                     zIndex: 10,
-                    opacity: frame > 20 ? 1 : 0 // Fade in slightly later
+                    opacity: 1
                 }}>
                     <div style={{
                         background: 'rgba(0,0,0,0.85)', // Higher opacity instead of blur
