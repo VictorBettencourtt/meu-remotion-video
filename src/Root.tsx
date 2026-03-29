@@ -3,6 +3,7 @@ import { NateStyle } from './NateStyle';
 import { DynamicNateStyle } from './DynamicNateStyle';
 import { Composition } from "remotion";
 import { z } from "zod";
+import { getVideoMetadata } from "@remotion/media-utils";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -92,18 +93,39 @@ export const RemotionRoot: React.FC = () => {
           backgroundMusicUrl: z.string(),
           narrationUrl: z.string().optional(),
           captionText: z.string().optional(),
-          caption: z.string().optional(),
-          captions: z.array(z.object({
-            text: z.string(),
-            start: z.number(),
-            end: z.number(),
-          })).optional(),
+          caption: z.any().optional(),
+          captions: z.any().optional(),
           isImage: z.boolean().optional(),
           durationInFrames: z.number().optional(),
         })}
         calculateMetadata={async ({ props }) => {
+          let duration = props.durationInFrames || 450;
+          let videoAspectRatio = 16 / 9; // Default fallback
+
+          if (!props.isImage && props.videoUrl) {
+            try {
+              const meta = await getVideoMetadata(props.videoUrl);
+              // Set duration to video length if no explicit duration was provided,
+              // or ensure it plays the full video length.
+              const vidDuration = Math.round(meta.durationInSeconds * 30);
+              if (!props.durationInFrames) {
+                  duration = vidDuration;
+              } else {
+                  // Ensure we use at least the requested length, unless it's way off
+                  duration = Math.max(duration, vidDuration);
+              }
+              videoAspectRatio = meta.width / meta.height;
+            } catch (e) {
+              console.error("Failed to getting video metadata:", e);
+            }
+          }
+
           return {
-            durationInFrames: props.durationInFrames || 450,
+            durationInFrames: duration,
+            props: {
+              ...props,
+              videoAspectRatio
+            }
           };
         }}
         defaultProps={{

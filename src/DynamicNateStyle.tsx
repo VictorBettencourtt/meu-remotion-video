@@ -14,10 +14,11 @@ export const DynamicNateStyle: React.FC<{
     narrationUrl?: string;
     captionText?: string;
     caption?: string;
-    captions?: { text: string; start: number; end: number }[];
+    captions?: any[];
     isImage?: boolean;
     durationInFrames?: number;
-}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, captionText, caption, captions, durationInFrames: propDuration }) => {
+    videoAspectRatio?: number;
+}> = ({ videoUrl, title, backgroundMusicUrl, narrationUrl, captionText, caption, captions, durationInFrames: propDuration, videoAspectRatio }) => {
     const frame = useCurrentFrame();
     const { durationInFrames: configDuration, width, height, fps } = useVideoConfig();
     const durationInFrames = propDuration || configDuration;
@@ -36,29 +37,33 @@ export const DynamicNateStyle: React.FC<{
     const currentCaption = parsedCaptions?.find(c => currentTimeMs >= c.start && currentTimeMs <= c.end)?.text || captionText;
 
     // DETERMINE ASPECT RATIO
-    const aspectRatio = width / height;
-    const isPortrait = aspectRatio < 1;
-    const isLandscape = aspectRatio > 1;
-    const isSquare = aspectRatio === 1;
+    const isPortrait = width / height < 1;
 
     // DYNAMIC SIZING CONFIGURATION
     // Base font size calculation
     const fontSize = Math.min(width, height) * 0.05; // 5% of smallest dimension
 
-    // 3D Container Sizing
-    let containerWidth = '90%';
-    let containerHeight = '80%';
-    let titleTop = 60;
+    // 3D Container Sizing based on real video aspect ratio
+    const vidRatio = videoAspectRatio || 16/9;
+    
+    // We want the container to be ~90% of width MAX, or ~75% of height MAX
+    let containerWidthPixels = width * 0.9;
+    let containerHeightPixels = containerWidthPixels / vidRatio;
 
-    if (isPortrait) {
-        containerWidth = '90%';
-        containerHeight = '65%'; // Shorter container to fit title
-        titleTop = height * 0.15; // Title lower down
-    } else if (isLandscape) {
-        containerWidth = '80%';
-        containerHeight = '80%';
-        titleTop = height * 0.05;
+    // Se a altura do video estiver vazando demais (ex: shorts em tela de shorts ocupa quase tudo)
+    // Reduzimos pelo limite de altura.
+    const maxHeight = height * (isPortrait ? 0.75 : 0.85);
+    if (containerHeightPixels > maxHeight) {
+        containerHeightPixels = maxHeight;
+        containerWidthPixels = containerHeightPixels * vidRatio;
     }
+
+    const containerWidth = `${containerWidthPixels}px`;
+    const containerHeight = `${containerHeightPixels}px`;
+    
+    // Title positioned based on empty space above the container
+    const emptySpaceTop = (height - containerHeightPixels) / 2;
+    const titleTop = Math.max(20, emptySpaceTop / 2 - fontSize);
 
     // PERSPECTIVA 3D DINÂMICA
     const rotateX = interpolate(frame, [0, durationInFrames], [5, -5]);
