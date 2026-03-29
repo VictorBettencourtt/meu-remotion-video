@@ -88,7 +88,15 @@ async function downloadMedia(url, baseName) {
     }
 }
 
+let isRendering = false;
+
 app.post('/render', async (req, res) => {
+    if (isRendering) {
+        console.log('[API] Concorrência bloqueada: servidor já está renderizando.');
+        return res.status(429).send({ error: "Servidor já está ocupado renderizando um vídeo." });
+    }
+    
+    isRendering = true;
     const { videoUrl, title, backgroundMusicUrl, narrationUrl, compositionId = 'MasterShort', durationInFrames, captionText, caption, captions } = req.body;
     
     let videoFile = '';
@@ -136,8 +144,10 @@ app.post('/render', async (req, res) => {
             codec: 'h264',
             outputLocation: outputLocation,
             inputProps,
-            concurrency: 4,
-            downloadBehavior: { concurrency: 5 },
+            concurrency: 1, // Reduz drasticamente o pico de CPU (antes: 4)
+            crf: 28, // Qualidade muito boa e renderização bem mais leve
+            x264Preset: 'superfast', // MÁGICA: Acelera o FFMPEG estupidamente economizando muito CPU
+            downloadBehavior: { concurrency: 2 },
             onProgress: ({ progress }) => {
                 console.log(`Render: ${(progress * 100).toFixed(0)}%`);
             }
@@ -163,6 +173,9 @@ app.post('/render', async (req, res) => {
             error: error.message,
             details: "Falha ao processar URL ou capturar screenshot."
         });
+    } finally {
+        isRendering = false;
+        console.log(`--- Renderização Concluída/Encerrada ---`);
     }
 });
 
