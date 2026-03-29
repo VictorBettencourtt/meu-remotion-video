@@ -89,7 +89,7 @@ async function downloadMedia(url, baseName) {
 }
 
 app.post('/render', async (req, res) => {
-    const { videoUrl, title, backgroundMusicUrl, narrationUrl, compositionId = 'MasterShort', durationInFrames } = req.body;
+    const { videoUrl, title, backgroundMusicUrl, narrationUrl, compositionId = 'MasterShort', durationInFrames, captionText, caption, captions } = req.body;
     
     let videoFile = '';
     let audioFile = '';
@@ -113,7 +113,11 @@ app.post('/render', async (req, res) => {
             title: title || "Sem título", 
             backgroundMusicUrl: audioFile,
             narrationUrl: narrationFile,
-            isImage: isImage
+            isImage: isImage,
+            captionText: captionText,
+            caption: caption,
+            captions: captions,
+            durationInFrames: durationInFrames ? parseInt(durationInFrames) : undefined
         };
 
         const composition = await selectComposition({

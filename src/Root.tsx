@@ -1,7 +1,7 @@
 import { MyShort } from './MeuShort';
 import { NateStyle } from './NateStyle';
 import { DynamicNateStyle } from './DynamicNateStyle';
-import { Composition } from "remotion";
+import { Composition, staticFile } from "remotion";
 import { z } from "zod";
 import { getVideoMetadata } from "@remotion/media-utils";
 
@@ -104,7 +104,11 @@ export const RemotionRoot: React.FC = () => {
 
           if (!props.isImage && props.videoUrl) {
             try {
-              const meta = await getVideoMetadata(props.videoUrl);
+              let urlToFetch = props.videoUrl;
+              if (!urlToFetch.startsWith('http')) {
+                  urlToFetch = staticFile(urlToFetch);
+              }
+              const meta = await getVideoMetadata(urlToFetch);
               // Set duration to video length if no explicit duration was provided,
               // or ensure it plays the full video length.
               const vidDuration = Math.round(meta.durationInSeconds * 30);
