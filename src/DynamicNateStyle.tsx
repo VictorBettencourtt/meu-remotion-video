@@ -34,7 +34,13 @@ export const DynamicNateStyle: React.FC<{
     }
 
     const currentTimeMs = (frame / fps) * 1000;
-    const currentCaption = parsedCaptions?.find(c => currentTimeMs >= c.start && currentTimeMs <= c.end)?.text || captionText;
+    
+    let currentCaption = "";
+    if (parsedCaptions && parsedCaptions.length > 0) {
+        currentCaption = parsedCaptions.find(c => currentTimeMs >= c.start && currentTimeMs <= c.end)?.text || "";
+    } else {
+        currentCaption = captionText || "";
+    }
 
     // DETERMINE ASPECT RATIO
     const isPortrait = width / height < 1;
@@ -248,18 +254,23 @@ export const DynamicNateStyle: React.FC<{
                     opacity: 1
                 }}>
                     <div style={{
-                        background: 'rgba(0,0,0,0.85)', // Higher opacity instead of blur
-                        padding: '10px 20px',
-                        borderRadius: '10px',
-                        maxWidth: '80%',
-                        textAlign: 'center'
+                        background: 'rgba(2,6,23,0.9)', // Combine com o HUD do titulo
+                        border: '1px solid rgba(59,130,246,0.3)',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        maxWidth: '85%',
+                        textAlign: 'center',
+                        boxShadow: '0 0 20px rgba(0,0,0,0.6)'
                     }}>
                         <span style={{
-                            color: '#fbbf24', // Amber/Yellow for visibility
-                            fontSize: `${fontSize * 0.6}px`,
-                            fontWeight: '700',
-                            fontFamily: 'monospace', // Tech feel
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+                            color: '#f8fafc', // Branco cristalino
+                            fontSize: `${fontSize * 0.7}px`,
+                            fontWeight: '800',
+                            fontFamily: 'system-ui, -apple-system, sans-serif',
+                            letterSpacing: '1px',
+                            textShadow: '0 0 15px rgba(59,130,246,0.6)', // Glow azulado tech
+                            lineHeight: 1.3,
+                            display: 'inline-block'
                         }}>
                             {currentCaption}
                         </span>
