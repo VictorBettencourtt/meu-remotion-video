@@ -144,10 +144,10 @@ app.post('/render', async (req, res) => {
             codec: 'h264',
             outputLocation: outputLocation,
             inputProps,
-            concurrency: 1, // Reduz drasticamente o pico de CPU (antes: 4)
-            crf: 28, // Qualidade muito boa e renderização bem mais leve
-            x264Preset: 'superfast', // MÁGICA: Acelera o FFMPEG estupidamente economizando muito CPU
-            downloadBehavior: { concurrency: 2 },
+            concurrency: 6, // Servidor parrudo, vamos devorar os núcleos para acelerar
+            crf: 28, 
+            x264Preset: 'superfast', 
+            downloadBehavior: { concurrency: 6 }, // Acelera cache
             onProgress: ({ progress }) => {
                 console.log(`Render: ${(progress * 100).toFixed(0)}%`);
             }
