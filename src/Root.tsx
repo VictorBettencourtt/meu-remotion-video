@@ -4,6 +4,8 @@ import { DynamicNateStyle } from './DynamicNateStyle';
 import { Composition, staticFile } from "remotion";
 import { z } from "zod";
 import { getVideoMetadata } from "@remotion/media-utils";
+import RemotionTemplate1779934159 from './templates/remotion-template-1779934159';
+
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -140,6 +142,21 @@ export const RemotionRoot: React.FC = () => {
           captionText: "Legenda automática gerada por IA aparece aqui.",
           isImage: true,
           durationInFrames: 450,
+        }}
+      />
+      <Composition
+        id="remotion-template-1779934159"
+        component={RemotionTemplate1779934159 as any}
+        durationInFrames={30 * Math.max(10, 5)}
+        fps={30}
+        width={1920}
+        height={1080}
+        schema={{}}
+        defaultProps={{
+          title: 'Generated Template',
+          script: '',
+          images: [],
+          ticker: [],
         }}
       />
     </>
