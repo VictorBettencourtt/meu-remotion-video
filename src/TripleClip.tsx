@@ -8,64 +8,19 @@ const getMediaSource = (src?: string) => {
 };
 
 // Um clip individual dentro da sequência (Gancho, Conteúdo ou CTA).
-// Mantém o mesmo enquadramento "cartão 16:9 dentro de 9:16" usado no MasterShort,
-// mas sem o zoom/translateY animado (cada clip já é curto o suficiente).
+// Vídeo puro, ocupando 100% do frame — sem cartão, sem borda, sem blur de fundo,
+// sem badge de título sobreposto. `label`/`showLabel` ficam nas props só por
+// compatibilidade com quem já manda `title`, mas não são mais renderizados.
 const ClipSegment: React.FC<{
   videoUrl: string;
   label?: string;
   showLabel?: boolean;
-}> = ({ videoUrl, label, showLabel }) => {
+}> = ({ videoUrl }) => {
   const mediaSrc = getMediaSource(videoUrl);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: 'black', fontFamily: 'system-ui' }}>
-      {/* FUNDO COM BLUR */}
-      <AbsoluteFill style={{
-        filter: 'blur(20px) brightness(0.2)',
-        transform: 'scale(1.2)',
-        zIndex: 0
-      }}>
-        <OffthreadVideo src={mediaSrc} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </AbsoluteFill>
-
-      {/* CONTAINER CENTRAL */}
-      <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', zIndex: 1 }}>
-        <div style={{
-          width: '94%',
-          aspectRatio: '16/9',
-          borderRadius: '30px',
-          border: '4px solid white',
-          overflow: 'hidden',
-          position: 'relative',
-          boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
-          backgroundColor: '#000'
-        }}>
-          <OffthreadVideo src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
-      </AbsoluteFill>
-
-      {showLabel && label && (
-        <div style={{
-          position: 'absolute',
-          top: 150,
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          zIndex: 10
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '12px 30px',
-            borderRadius: '10px',
-            borderLeft: '10px solid #3b82f6',
-            boxShadow: '0 10px 20px rgba(0,0,0,0.4)',
-          }}>
-            <span style={{ color: '#000', fontSize: '32px', fontWeight: '900', textTransform: 'uppercase' }}>
-              {label}
-            </span>
-          </div>
-        </div>
-      )}
+    <AbsoluteFill style={{ backgroundColor: 'black' }}>
+      <OffthreadVideo src={mediaSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
     </AbsoluteFill>
   );
 };
