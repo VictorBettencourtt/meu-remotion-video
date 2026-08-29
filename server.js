@@ -97,36 +97,65 @@ app.post('/render', async (req, res) => {
     }
     
     isRendering = true;
-    const { videoUrl, title, backgroundMusicUrl, narrationUrl, compositionId = 'MasterShort', durationInFrames, captionText, caption, captions } = req.body;
-    
+    const {
+        videoUrl, title, backgroundMusicUrl, narrationUrl, compositionId = 'MasterShort', durationInFrames, captionText, caption, captions,
+        // Campos específicos do TripleClip (Gancho + Conteúdo + CTA em um vídeo só)
+        ganchoUrl, ganchoTempo, conteudoUrl, conteudoTempo, ctaUrl, ctaTempo,
+    } = req.body;
+
     let videoFile = '';
     let audioFile = '';
     let narrationFile = '';
+    let ganchoFile = '';
+    let conteudoFile = '';
+    let ctaFile = '';
 
     try {
         console.log(`--- Iniciando Renderização Vision: ${compositionId} ---`);
-        
-        if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}`);
+
         if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}`);
         if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}`);
+
+        let inputProps;
+
+        if (compositionId === 'TripleClip') {
+            // Baixa os 3 clipes em sequência (o servidor não tem fila/concorrência de render,
+            // então não há ganho em paralelizar aqui além do que axios já faz por request).
+            if (ganchoUrl) ganchoFile = await downloadMedia(ganchoUrl, `g-${Date.now()}`);
+            if (conteudoUrl) conteudoFile = await downloadMedia(conteudoUrl, `c-${Date.now()}`);
+            if (ctaUrl) ctaFile = await downloadMedia(ctaUrl, `cta-${Date.now()}`);
+
+            inputProps = {
+                ganchoUrl: ganchoFile,
+                ganchoTempo: ganchoTempo ? parseFloat(ganchoTempo) : undefined,
+                conteudoUrl: conteudoFile,
+                conteudoTempo: conteudoTempo ? parseFloat(conteudoTempo) : undefined,
+                ctaUrl: ctaFile,
+                ctaTempo: ctaTempo ? parseFloat(ctaTempo) : undefined,
+                title: title || "",
+                backgroundMusicUrl: audioFile,
+                narrationUrl: narrationFile,
+            };
+        } else {
+            if (videoUrl) videoFile = await downloadMedia(videoUrl, `v-${Date.now()}`);
+            const isImage = videoFile.endsWith('.png') || videoFile.endsWith('.jpg') || videoFile.endsWith('.jpeg');
+
+            inputProps = {
+                videoUrl: videoFile,
+                title: title || "Sem título",
+                backgroundMusicUrl: audioFile,
+                narrationUrl: narrationFile,
+                isImage: isImage,
+                captionText: captionText,
+                caption: caption,
+                captions: captions,
+                durationInFrames: durationInFrames ? parseInt(durationInFrames) : undefined
+            };
+        }
 
         const bundleLocation = await bundle({
             entryPoint: path.resolve('./src/index.ts'),
         });
-
-        const isImage = videoFile.endsWith('.png') || videoFile.endsWith('.jpg') || videoFile.endsWith('.jpeg');
-
-        const inputProps = { 
-            videoUrl: videoFile, 
-            title: title || "Sem título", 
-            backgroundMusicUrl: audioFile,
-            narrationUrl: narrationFile,
-            isImage: isImage,
-            captionText: captionText,
-            caption: caption,
-            captions: captions,
-            durationInFrames: durationInFrames ? parseInt(durationInFrames) : undefined
-        };
 
         const composition = await selectComposition({
             serveUrl: bundleLocation,
@@ -154,7 +183,7 @@ app.post('/render', async (req, res) => {
         });
 
         setTimeout(() => {
-            [videoFile, audioFile, narrationFile].forEach(f => {
+            [videoFile, audioFile, narrationFile, ganchoFile, conteudoFile, ctaFile].forEach(f => {
                 if (f) {
                     const p = path.join(publicPath, f);
                     try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch(e) {}
