@@ -1,6 +1,7 @@
 import { MyShort } from './MeuShort';
 import { NateStyle } from './NateStyle';
 import { DynamicNateStyle } from './DynamicNateStyle';
+import { TripleClip } from './TripleClip';
 import { Composition, staticFile } from "remotion";
 import { z } from "zod";
 import { getVideoMetadata } from "@remotion/media-utils";
@@ -140,6 +141,78 @@ export const RemotionRoot: React.FC = () => {
           captionText: "Legenda automática gerada por IA aparece aqui.",
           isImage: true,
           durationInFrames: 450,
+        }}
+      />
+      {/*
+        TRIPLECLIP: concatena Gancho + Conteúdo + CTA em UM vídeo final.
+        Resolve a limitação em que as composições acima só suportavam 1 clipe por render
+        (o que forçava o fluxo "Edição de Vídeos" a chamar o Remotion 3x sem nunca juntar
+        os vídeos em sequência). Usa <Series> em src/TripleClip.tsx.
+        calculateMetadata soma automaticamente a duração real (em segundos) de cada
+        um dos 3 vídeos recebidos, então o n8n não precisa calcular frames manualmente
+        — basta mandar as 3 URLs; se ganchoTempo/conteudoTempo/ctaTempo (segundos) vierem,
+        eles são usados como fallback quando a duração real não puder ser lida.
+      */}
+      <Composition
+        id="TripleClip"
+        component={TripleClip as any}
+        durationInFrames={450} // fallback; recalculado em calculateMetadata
+        fps={30}
+        width={1080}
+        height={1920}
+        schema={z.object({
+          ganchoUrl: z.string(),
+          ganchoTempo: z.number().optional(),
+          conteudoUrl: z.string(),
+          conteudoTempo: z.number().optional(),
+          ctaUrl: z.string(),
+          ctaTempo: z.number().optional(),
+          title: z.string().optional(),
+          backgroundMusicUrl: z.string().optional(),
+          narrationUrl: z.string().optional(),
+        })}
+        calculateMetadata={async ({ props }) => {
+          const fps = 30;
+
+          const resolveDurationFrames = async (url: string, fallbackSeconds?: number) => {
+            const fallbackFrames = Math.round((fallbackSeconds || 3) * fps);
+            if (!url) return fallbackFrames;
+            try {
+              const urlToFetch = url.startsWith('http') ? url : staticFile(url);
+              const meta = await getVideoMetadata(urlToFetch);
+              return Math.max(1, Math.round(meta.durationInSeconds * fps));
+            } catch (e) {
+              console.error('[TripleClip] Falha ao ler metadata de', url, e);
+              return fallbackFrames;
+            }
+          };
+
+          const [ganchoFrames, conteudoFrames, ctaFrames] = await Promise.all([
+            resolveDurationFrames(props.ganchoUrl, props.ganchoTempo),
+            resolveDurationFrames(props.conteudoUrl, props.conteudoTempo),
+            resolveDurationFrames(props.ctaUrl, props.ctaTempo),
+          ]);
+
+          return {
+            durationInFrames: ganchoFrames + conteudoFrames + ctaFrames,
+            props: {
+              ...props,
+              ganchoDurationInFrames: ganchoFrames,
+              conteudoDurationInFrames: conteudoFrames,
+              ctaDurationInFrames: ctaFrames,
+            },
+          };
+        }}
+        defaultProps={{
+          ganchoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          ganchoTempo: 3,
+          conteudoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          conteudoTempo: 5,
+          ctaUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          ctaTempo: 3,
+          title: "",
+          backgroundMusicUrl: "",
+          narrationUrl: "",
         }}
       />
     </>
