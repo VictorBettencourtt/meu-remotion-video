@@ -90,6 +90,59 @@ async function downloadMedia(url, baseName) {
 
 let isRendering = false;
 
+
+const { execFileSync } = require('child_process');
+const crypto = require('crypto');
+app.post('/render/prime-report', async (req, res) => {
+    const expectedToken = process.env.PRIME_REPORT_RENDER_TOKEN;
+    const providedToken = String(req.get('x-prime-token') || '');
+    if (!expectedToken || expectedToken.length < 32 || Buffer.byteLength(providedToken) !== Buffer.byteLength(expectedToken) || !crypto.timingSafeEqual(Buffer.from(providedToken), Buffer.from(expectedToken))) return res.status(401).json({error: 'Acesso não autorizado'});
+    if (isRendering) return res.status(429).json({error: 'Servidor ocupado'});
+    const timeline = req.body?.data?.timeline;
+    const tracks = timeline?.tracks;
+    if (!Array.isArray(tracks) || tracks.length < 4 || !Array.isArray(tracks[2]?.clips) || tracks[2].clips.length === 0 || !tracks[3]?.clips?.[0]?.asset?.src) {
+        return res.status(400).json({error: 'Linha do tempo inválida'});
+    }
+    isRendering = true;
+    const jobId = Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+    const jobDir = path.join(publicPath, 'prime-' + jobId);
+    const files = [];
+    try {
+        fs.mkdirSync(jobDir, {recursive: true});
+        async function getAsset(url, name, allowedTypes) {
+            const parsed = new URL(url);
+            const allowedHosts = new Set(['automatizze.ia.br', 'automarketing-wordpress.ykfift.easypanel.host', 'drive.google.com', 'prod-1.storage.jamendo.com']);
+            if (parsed.protocol !== 'https:' || !allowedHosts.has(parsed.hostname) || parsed.port || parsed.username || parsed.password) throw new Error('Origem de mídia não permitida');
+            const response = await axios.get(url, {responseType: 'arraybuffer', timeout: 60000, maxRedirects: 0, maxContentLength: 20 * 1024 * 1024, headers: {'User-Agent': 'Mozilla/5.0'}});
+            const contentType = String(response.headers['content-type'] || '').toLowerCase();
+            if (!allowedTypes.some(type => contentType.startsWith(type))) throw new Error('Formato de mídia inválido para ' + name);
+            fs.writeFileSync(path.join(jobDir, name), response.data);
+            files.push(name);
+            return 'prime-' + jobId + '/' + name;
+        }
+        const voice = await getAsset(tracks[3].clips[0].asset.src, 'voice.mp3', ['audio/','application/octet-stream']);
+        const music = timeline.soundtrack?.src ? await getAsset(timeline.soundtrack.src, 'music.mp3', ['audio/','application/octet-stream']) : '';
+        const logo = tracks[0]?.clips?.[0]?.asset?.src ? await getAsset(tracks[0].clips[0].asset.src, 'logo.png', ['image/']) : '';
+        const images = [];
+        for (const [index, clip] of tracks[2].clips.entries()) images.push(await getAsset(clip.asset.src, 'image-' + index, ['image/']));
+        const duration = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', path.join(jobDir, 'voice.mp3')], {encoding: 'utf8'}).trim());
+        if (!Number.isFinite(duration) || duration <= 0 || duration > 900) throw new Error('Duração da narração inválida');
+        const headlines = (tracks[1]?.clips || []).map(c => ({text: String(c.asset?.html || '').match(/<p[^>]*>([\\s\\S]*?)<\\/p>/i)?.[1]?.replace(/<[^>]+>/g, '') || '', start: Number(c.start), length: Number(c.length)})).filter(c => c.text && Number.isFinite(c.start) && Number.isFinite(c.length));
+        const inputProps = {images, voice, music, logo, headlines, durationInFrames: Math.ceil((duration + 0.8) * 30)};
+        const serveUrl = await bundle({entryPoint: path.resolve('./src/index.ts')});
+        const composition = await selectComposition({serveUrl, id: 'PrimeReport', inputProps});
+        const outputName = 'prime-report-' + jobId + '.mp4';
+        await renderMedia({composition, serveUrl, codec: 'h264', outputLocation: path.resolve(outputName), inputProps, concurrency: 2, crf: 24, x264Preset: 'superfast'});
+        res.json({success: true, url: 'https://automarketing-remotion.ykfift.easypanel.host/outputs/' + outputName, duration});
+    } catch (error) {
+        console.error('[PRIME REPORT]', error.message);
+        res.status(500).json({error: error.message});
+    } finally {
+        fs.rmSync(jobDir, {recursive: true, force: true});
+        isRendering = false;
+    }
+});
+
 app.post('/render', async (req, res) => {
     if (isRendering) {
         console.log('[API] Concorrência bloqueada: servidor já está renderizando.');
