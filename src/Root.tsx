@@ -1,3 +1,4 @@
+import { PrimeReport } from './PrimeReport';
 import { MyShort } from './MeuShort';
 import { NateStyle } from './NateStyle';
 import { DynamicNateStyle } from './DynamicNateStyle';
@@ -9,6 +10,7 @@ import { getVideoMetadata } from "@remotion/media-utils";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition id="PrimeReport" component={PrimeReport as any} durationInFrames={900} fps={30} width={1920} height={1080} calculateMetadata={({props}: any) => ({durationInFrames: props.durationInFrames})} defaultProps={{images: ['placeholder.jpg'], voice: '', music: '', logo: '', headlines: [], durationInFrames: 900}} />
       <Composition
         id="MasterShort"
         component={MyShort as any}
