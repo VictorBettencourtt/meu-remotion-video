@@ -1,3 +1,5 @@
+import { Achadinhos } from "./Achadinhos";
+import { getAudioDurationInSeconds } from "@remotion/media-utils";
 import { MyShort } from './MeuShort';
 import { NateStyle } from './NateStyle';
 import { DynamicNateStyle } from './DynamicNateStyle';
@@ -9,6 +11,39 @@ import { getVideoMetadata } from "@remotion/media-utils";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="Achadinhos"
+        component={Achadinhos as any}
+        durationInFrames={900}
+        fps={30}
+        width={1080}
+        height={1920}
+        schema={z.object({
+          videoUrl: z.string(),
+          title: z.string(),
+          backgroundMusicUrl: z.string(),
+          narrationUrl: z.string(),
+          isImage: z.boolean().optional(),
+          durationInFrames: z.number().optional(),
+          videoFrames: z.number().optional(),
+        })}
+        calculateMetadata={async ({props}) => {
+          const source = (value: string) => value.startsWith("http") ? value : staticFile(value);
+          if (!props.videoUrl || !props.narrationUrl) throw new Error("Vídeo e narração são obrigatórios.");
+          const [video, audioSeconds] = await Promise.all([
+            getVideoMetadata(source(props.videoUrl)),
+            getAudioDurationInSeconds(source(props.narrationUrl)),
+          ]);
+          if (!Number.isFinite(audioSeconds) || audioSeconds <= 0 || !Number.isFinite(video.durationInSeconds) || video.durationInSeconds <= 0) {
+            throw new Error("Não foi possível determinar a duração do vídeo ou da narração.");
+          }
+          return {
+            durationInFrames: Math.max(1, Math.ceil((audioSeconds + 0.3) * 30)),
+            props: {...props, videoFrames: Math.max(1, Math.floor(video.durationInSeconds * 30))},
+          };
+        }}
+        defaultProps={{videoUrl: "", title: "", backgroundMusicUrl: "", narrationUrl: "", isImage: false}}
+      />
       <Composition
         id="MasterShort"
         component={MyShort as any}
