@@ -7,7 +7,7 @@ const axios = require('axios');
 const puppeteer = require('puppeteer');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
 const outputsPath = path.resolve('./outputs');
 fs.mkdirSync(outputsPath, { recursive: true });
 app.use('/outputs', express.static(outputsPath));
@@ -100,7 +100,7 @@ app.post('/render', async (req, res) => {
     
     isRendering = true;
     const {
-        videoUrl, title, backgroundMusicUrl, narrationUrl, compositionId = 'MasterShort', durationInFrames, captionText, caption, captions,
+        videoUrl, title, backgroundMusicUrl, narrationUrl, narrationBase64, compositionId = 'MasterShort', durationInFrames, captionText, caption, captions,
         // Campos específicos do TripleClip (Gancho + Conteúdo + CTA em um vídeo só)
         ganchoUrl, ganchoTempo, conteudoUrl, conteudoTempo, ctaUrl, ctaTempo,
     } = req.body;
@@ -116,7 +116,14 @@ app.post('/render', async (req, res) => {
         console.log(`--- Iniciando Renderização Vision: ${compositionId} ---`);
 
         if (backgroundMusicUrl) audioFile = await downloadMedia(backgroundMusicUrl, `a-${Date.now()}`);
-        if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}`);
+        if (narrationBase64) {
+            const wav = Buffer.from(narrationBase64, 'base64');
+            if (wav.length < 44 || wav.length > 15 * 1024 * 1024 || wav.toString('ascii', 0, 4) !== 'RIFF' || wav.toString('ascii', 8, 12) !== 'WAVE') {
+                throw new Error('Narração WAV inválida ou maior que 15 MB.');
+            }
+            narrationFile = `n-${Date.now()}.wav`;
+            fs.writeFileSync(path.join(publicPath, narrationFile), wav);
+        } else if (narrationUrl) narrationFile = await downloadMedia(narrationUrl, `n-${Date.now()}`);
 
         let inputProps;
 
