@@ -8,7 +8,9 @@ const puppeteer = require('puppeteer');
 
 const app = express();
 app.use(express.json());
-app.use('/outputs', express.static(path.resolve('./')));
+const outputsPath = path.resolve('./outputs');
+fs.mkdirSync(outputsPath, { recursive: true });
+app.use('/outputs', express.static(outputsPath));
 
 const publicPath = path.resolve('./public');
 if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath);
@@ -165,7 +167,7 @@ app.post('/render', async (req, res) => {
         });
 
         const outputName = `render-${Date.now()}.mp4`;
-        const outputLocation = path.resolve(outputName);
+        const outputLocation = path.join(outputsPath, outputName);
 
         await renderMedia({
             composition,
@@ -173,10 +175,10 @@ app.post('/render', async (req, res) => {
             codec: 'h264',
             outputLocation: outputLocation,
             inputProps,
-            concurrency: 6, // Servidor parrudo, vamos devorar os núcleos para acelerar
+            concurrency: 2, // Preserva capacidade para os demais serviços.
             crf: 28, 
             x264Preset: 'superfast', 
-            downloadBehavior: { concurrency: 6 }, // Acelera cache
+            downloadBehavior: { concurrency: 2 }, // Acelera cache
             onProgress: ({ progress }) => {
                 console.log(`Render: ${(progress * 100).toFixed(0)}%`);
             }
@@ -191,9 +193,10 @@ app.post('/render', async (req, res) => {
             });
         }, 10000);
 
+        setTimeout(() => fs.unlink(outputLocation, () => {}), 60 * 60 * 1000);
         res.send({ 
             success: true, 
-            url: `https://automarketing-remotion.ykfift.easypanel.host/outputs/${outputName}` 
+            url: `http://automarketing_achadinhos-render:3000/outputs/${outputName}` 
         });
 
     } catch (error) {
