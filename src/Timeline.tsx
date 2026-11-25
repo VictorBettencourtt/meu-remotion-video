@@ -5,6 +5,7 @@ import {
   Img,
   OffthreadVideo,
   Sequence,
+  staticFile,
   interpolate,
   useCurrentFrame,
   useVideoConfig,
@@ -35,7 +36,8 @@ const TimelineAsset: React.FC<{ clip: TimelineClip }> = ({ clip }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const { asset } = clip;
-  const source = asset.src || '';
+  const rawSource = asset.src || '';
+  const source = rawSource.startsWith('http') ? rawSource : (rawSource ? staticFile(rawSource) : '');
   const fit = clip.fit === 'contain' ? 'contain' : 'cover';
 
   if (asset.type === 'audio') {
