@@ -123,7 +123,6 @@ export const TimelineComposition: React.FC<TimelineProps> = ({ timeline }) => {
               key={`${trackIndex}-${clipIndex}`}
               from={from}
               durationInFrames={duration}
-              layout="none"
               style={{ zIndex: tracks.length - trackIndex }}
             >
               <TimelineAsset clip={clip} />
