@@ -1,4 +1,5 @@
 import { MyShort } from './MeuShort';
+import { TimelineComposition } from './Timeline';
 import { NateStyle } from './NateStyle';
 import { DynamicNateStyle } from './DynamicNateStyle';
 import { TripleClip } from './TripleClip';
@@ -213,6 +214,37 @@ export const RemotionRoot: React.FC = () => {
           title: "",
           backgroundMusicUrl: "",
           narrationUrl: "",
+        }}
+      />
+      <Composition
+        id="Timeline"
+        component={TimelineComposition as any}
+        durationInFrames={300}
+        fps={30}
+        width={1920}
+        height={1080}
+        schema={z.object({
+          timeline: z.any(),
+          fps: z.number().optional(),
+          width: z.number().optional(),
+          height: z.number().optional(),
+        })}
+        calculateMetadata={({ props }) => {
+          const fps = props.fps || 30;
+          const clips = (props.timeline?.tracks || []).flatMap((track: any) => track.clips || []);
+          const seconds = clips.reduce((max: number, clip: any) => Math.max(max, (Number(clip.start) || 0) + (Number(clip.length) || 0)), 1);
+          return {
+            durationInFrames: Math.max(1, Math.ceil(seconds * fps)),
+            fps,
+            width: props.width || 1920,
+            height: props.height || 1080,
+          };
+        }}
+        defaultProps={{
+          timeline: { background: "#000", tracks: [{ clips: [] }] },
+          fps: 30,
+          width: 1920,
+          height: 1080,
         }}
       />
     </>
